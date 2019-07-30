@@ -9,4 +9,4 @@ cifar-10/cifar-10-batches-py/data_batch_5
 cifar-10/cifar-10-batches-py/readme.html
 cifar-10/cifar-10-batches-py/test_batch
 cifar-10/cifar-10-python.tar.gz
-weights/190730173349_unet.pth
+*.pth

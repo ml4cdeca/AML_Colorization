@@ -10,34 +10,39 @@ def show_colorization(pred,truth=None,original=None):
     N = 1
     if len(pred.shape)==4:
          N = pred.shape[0]
+    M = 1+(1 if not truth is None else 0)+(1 if not original is None else 0)
+    plt.figure(figsize=(5, N*5/M))
+    counter=np.arange(1,1+N*M).reshape(M,N)
     for i in range(N):
-        plt.figure(figsize=(10, 2))
         if truth is None and original is None:
             plt.imshow(pred[i].detach().cpu().numpy())
-            plt.show()
         elif original is None:
             #print(truth.shape,pred.shape)
-            plt.subplot(121)
-            plt.title('colorization')
+            plt.subplot(N,2,counter[i,0])
+            if i==0:
+                plt.title('colorization')
             plt.axis('off')
             plt.imshow(np.transpose(pred[i].detach().cpu().numpy(),(1,2,0)))
-            plt.subplot(122)
-            plt.title('ground truth')
+            plt.subplot(N,2,counter[i,1])
+            if i==0:
+                plt.title('ground truth')
             plt.axis('off')
             plt.imshow(np.transpose(truth[i].detach().cpu().numpy(),(1,2,0)))
-            plt.show()
         else:
-            #print(original.shape,original.max(),original.min())
-            plt.subplot(131)
-            plt.title('Input image')
+            #print(N,truth.shape,pred.shape,original.shape)
+            plt.subplot(N,3,counter[i,0])
+            if i==0:
+                plt.title('Input image')
             plt.axis('off')
-            plt.imshow(.5*(1+np.transpose(original[i].detach().cpu().numpy(),(1,2,0))))
-            plt.subplot(132)
-            plt.title('Ground truth')
+            plt.imshow(.5*(1+original[i].detach().cpu().numpy()[0]),cmap='gray')
+            plt.subplot(N,3,counter[i,1])
+            if i==0:
+                plt.title('Ground truth')
             plt.axis('off')
-            plt.imshow(truth[0].detach().cpu().numpy())
-            plt.subplot(133)
-            plt.title('colorization')
-            plt.imshow(pred[0].detach().cpu().numpy())
+            plt.imshow(np.transpose(truth[i].detach().cpu().numpy(),(1,2,0)))
+            plt.subplot(N,3,counter[i,2])
+            if i==0:
+                plt.title('colorization')
+            plt.imshow(np.transpose(pred[i].detach().cpu().numpy(),(1,2,0)))
             plt.axis('off')
-            plt.show()
+    plt.show()

@@ -36,7 +36,7 @@ def main(argv):
     out_shape=(s.classes,32,32)
     trainset = datasets.CIFAR10(root='./cifar-10', train=False,
                                         download=True, transform=transforms.ToTensor())
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=1,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=3,
                                         shuffle=True, num_workers=2)
     print("Loaded dataset from", data_path)
     
@@ -50,7 +50,7 @@ def main(argv):
         print("Did not find weight files.")
         sys.exit(2)
     UNet.eval()
-    gray = torch.tensor([0.2989 ,0.5870, 0.1140 ])[:,None,None].float()
+    gray = torch.tensor([0.2989 ,0.5870, 0.1140])[:,None,None].float()
     with torch.no_grad():
         for i,(image,c) in enumerate(trainloader):
             #convert to grayscale image
@@ -60,6 +60,6 @@ def main(argv):
             image=image.float().to(device)
             #generate colorized version with unet
             unet_col=UNet(X)
-            show_colorization(unet_col,image)
+            show_colorization(unet_col,image,X)
 if __name__ == '__main__':
     main(sys.argv[1:])
