@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from unet.dataset import gta_dataset, city_dataset
 from settings import s
-from unet.model import unet
+from unet.unet import unet
 
 #not really beautiful 
 def show_colorization(pred,truth=None,original=None):
