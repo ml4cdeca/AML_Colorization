@@ -17,7 +17,7 @@ settings = {
     'save_freq': 500,
     'save_weights':True,
     'weights_path':'weights',
-    'weights_name':'unet.pth',
+    'weights_name':'unet',
     'save_loss':True,
     'loss_path':'weights',
     'loss_name':'loss.txt',

@@ -1,6 +1,7 @@
 import torch
 import os
-from unet.model import unet
+from models.unet import unet
+from models.model import model
 from torchvision import transforms
 from settings import s
 import torchvision.datasets as datasets
@@ -41,7 +42,7 @@ def main(argv):
     print("Loaded dataset from", data_path)
     
     #define model
-    UNet=unet().to(device)
+    UNet=model().to(device)
     #load weights
     try:
         UNet.load_state_dict(torch.load(weight_path))
@@ -52,14 +53,18 @@ def main(argv):
     UNet.eval()
     gray = torch.tensor([0.2989 ,0.5870, 0.1140])[:,None,None].float()
     with torch.no_grad():
-        for i,(image,c) in enumerate(trainloader):
+        for i,(image,_) in enumerate(trainloader):
             #convert to grayscale image
             
             #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
             X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
             image=image.float().to(device)
+            #print(X.min(),X.max())
             #generate colorized version with unet
-            unet_col=UNet(X)
+            try:
+                unet_col=UNet(X)
+            except:
+                unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
             show_colorization(unet_col,image,X)
 if __name__ == '__main__':
     main(sys.argv[1:])

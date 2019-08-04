@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-import unet.resnet as resnet
+import models.resnet as resnet
 
 class model(nn.Module):
     def __init__(self,block=resnet.BasicBlock, layers=[3, 4, 6, 3], num_classes=1000, zero_init_residual=False,
