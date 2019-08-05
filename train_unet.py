@@ -5,7 +5,7 @@ import os
 import numpy as np
 from itertools import count
 import sys, getopt
-from unet.model import unet
+from models.unet import unet
 from settings import s
 import time
 import torchvision.transforms as transforms
