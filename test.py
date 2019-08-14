@@ -14,9 +14,9 @@ def main(argv):
     
     data_path = './cifar-10'
     weight_path = s.weights_path
-    batch_norm=s.batch_norm
+    mode=0
     try:
-        opts, args = getopt.getopt(argv,"h:w:p:b:",["help", "weight-path", "datapath"])
+        opts, args = getopt.getopt(argv,"h:w:p:b:m:",["help", "weight-path", "datapath",'model'])
     except getopt.GetoptError as error:
         print(error)
         print( 'test.py -i <Boolean> -s <Boolean>')
@@ -32,6 +32,9 @@ def main(argv):
             data_path = arg
         elif opt in ("--batchnorm", "-b"):
             batch_norm = arg in ["True", "true", "1"]
+        elif opt in ('-m','--model'):
+            if arg in ('u'):
+                mode=1
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     in_shape=(3,32,32)
     out_shape=(s.classes,32,32)
@@ -42,7 +45,8 @@ def main(argv):
     print("Loaded dataset from", data_path)
     
     #define model
-    UNet=model().to(device)
+    UNet=model().to(device) if mode ==0 else unet().to(device)
+    
     #load weights
     try:
         UNet.load_state_dict(torch.load(weight_path))

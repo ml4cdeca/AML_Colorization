@@ -7,11 +7,11 @@ settings = {
 
     # Hyperparameters
     'learning_rate':.001,
-    'batch_size':1,
+    'batch_size':64,
     'betas':(0.9, 0.999),
     'loss_norm': False,
     'batch_norm': True,
-
+    'image_loss_weight':50,
 
     # Other
     'save_freq': 500,
