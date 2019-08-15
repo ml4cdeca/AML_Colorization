@@ -59,7 +59,7 @@ def main(argv):
         elif opt in ("-l", "--lr"):
             lr = float(arg)
         elif opt=='-m':
-            mode = arg in ('u','1')
+            mode = arg in ('u','1','unet')
         elif opt=='--beta1':
             beta1 = float(arg)
         elif opt=='--beta2':
@@ -115,7 +115,8 @@ def main(argv):
             "batch_size": mbsize,
             "lr": lr,
             "betas": betas,
-            "image_loss_weight": image_loss_weight
+            "image_loss_weight": image_loss_weight,
+            "model":['custom','unet'][mode]
         }
     else:
         #load specified parameters from model_dict
@@ -222,9 +223,6 @@ def main(argv):
                     torch.save(crit.state_dict(),crit_path)
                 print("Parameters saved")
 
-                
-
-                
                 if s.save_loss:
                     #save loss history to file
                     try:
