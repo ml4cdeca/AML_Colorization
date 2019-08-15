@@ -18,25 +18,21 @@ import json
 def main(argv):
     # setting argument defaults
     mbsize = s.batch_size
-    data_path = s.data_path
     report_freq=s.report_freq
     weight_path=s.weights_path
     weights_name=s.weights_name
     lr=s.learning_rate
-    loss_norm = s.loss_norm
-    batch_norm = s.batch_norm
     save_freq = s.save_freq
     mode=0
-    time_namer = time.strftime("%y%m%d%H%M%S")
-    load_specific = True
-    parent_name = None
     image_loss_weight=s.image_loss_weight
     epochs = s.epochs
-    path_gta = path_city = None
+    beta1,beta2=s.betas
+    infinite_loop=s.infinite_loop
     help='test.py -b <int> -p <string> -r <int> -w <string>'
-    dataset_type = s.dataset_type
     try:
-        opts, args = getopt.getopt(argv,"h:e:b:p:r:w:l:s:t:n:m:",["mbsize=","data-path=","report-freq=",'weight-path=','parent-name=', 'lr=', 'loss-norm=', 'batch-norm=', 'epochs=','save-freq=','timer-name=', 'dataset-type=', 'datapath-gta=', 'datapath-city='])
+        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:",
+            ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=',
+            'beta1=','beta2='])
     except getopt.GetoptError:
         print(help)
         sys.exit(2)
@@ -47,10 +43,11 @@ def main(argv):
             sys.exit()
         elif opt in ("-b", "--mbsize"):
             mbsize = int(arg)
-        elif opt in ("-p", "--data-path"):
-            data_path = arg
+        #elif opt in ("-p", "--data-path"):
+        #    data_path = arg
         elif opt in ("-e", "--epochs"):
             epochs = int(arg)
+            infinite_loop=False
         elif opt in ('-r','--report-freq'):
             report_freq = int(arg)
         elif opt in ("-w", "--weight-path"):
@@ -59,35 +56,23 @@ def main(argv):
             weights_name = arg            
         elif opt in ("-s", "--save-freq"):
             save_freq=int(arg)
-        elif opt in ("-t", "--timer-name"):
-            time_namer=arg
-            load_specific = True
         elif opt in ("-l", "--lr"):
             lr = float(arg)
-        elif opt in ("--loss-norm"):
-            load_specific=arg in ["true", "True", "1"]
-        elif opt in ("--batch-norm"):
-            batch_norm = arg in ["true", "True", "1"]
-        elif opt == "--parent-name":
-            parent_name = arg
-        elif opt == "--dataset-type":
-            dataset_type = arg  # supported values: "gta", "city", "mixed"
-        elif opt == "--datapath-gta":
-            path_gta = arg
-        elif opt == "--datapath-city":
-            path_city = arg
         elif opt=='-m':
             mode = arg in ('u','1')
+        elif opt=='--beta1':
+            beta1 = float(arg)
+        elif opt=='--beta2':
+            beta2 = float(arg)
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     in_shape=(3,32,32)
-    out_shape=(s.classes,32,32)
-
+    #out_shape=(s.classes,32,32)
+    betas=(beta1,beta2)
     weight_path_ending=os.path.join(weight_path,weights_name+'.pth')
-    print("NETWORK PATH:", weight_path_ending)
 
-    loss_path_ending = os.path.join(weight_path, time_namer + "_" + s.loss_name)
-    model_description_path_ending = os.path.join(weight_path,s.model_description_name)
+    loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
+    
     
     trainset = datasets.CIFAR10(root='./cifar-10', train=True,
                                         download=True, transform=transforms.ToTensor())
@@ -95,87 +80,24 @@ def main(argv):
                                         shuffle=True, num_workers=2)
    
     print("NETWORK PATH:", weight_path_ending)
-    '''
-    if parent_name is None:
-        parent_path_ending = None
-    else:
-        if parent_name == "latest":
-            i = -1
-            while not s.weights_name in parent_name:  # filtering out logs
-                parent_name = sorted(os.listdir(weight_path))[i]
-                i -= 1
-        parent_path_ending=os.path.join(weight_path, parent_name)  # assuming parent and children weights to be in same directory
-    loss_path_ending = os.path.join(weight_path, time_namer + "_" + s.loss_name)
-    model_description_path_ending = os.path.join(weight_path,s.model_description_name)
-
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    trainset = datasets.CIFAR10(root='./cifar-10', train=True,
-                                        download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
-                                          shuffle=True, num_workers=2)
-    '''
-    #print("dataset_type",dataset_type)
-    #dataloader
-    #trainloader=torch.utils.data.DataLoader(dataset,batch_size=mbsize,shuffle=True, num_workers=1)
-
+    
     #define model
-    UNet=model().to(device) if mode==0 else unet().to(device)
+    UNet=None
+    try:
+        UNet=model().to(device) if mode==0 else unet().to(device)
+    except:
+        #if the wrong mode was chosen: try the other one
+        UNet=model().to(device) if mode==1 else unet().to(device)
     #load weights
-    if load_specific:
-        try:
-            UNet.load_state_dict(torch.load(weight_path_ending))
-            print("Loaded weights from", weight_path_ending)
-        except FileNotFoundError:
-            print("Unable to find weight path "+ weight_path_ending + ". Initializing new weights.")
-            # weights already initialized in unet.__init__()
-    else:
-        print("No parent network specified. Initialized new weights.")
-        #TODO: fix this 
-        '''
-        # change model overview list:
-        if not time_namer in model_dict.keys():
-            model_dict[time_namer] = {
-                "data_set_path": data_path,
-                "loaded_weights": weights_name,
-                "epochs": e,
-                "batch_size": mbsize,
-                "scale": s.scale,
-                "crop": s.crop_size,
-                "lr": lr,
-                "betas": s.betas
-            }
-        else:
-            model_dict[time_namer]["epochs"] = e  # only epochs change when model is already mentioned in dict
-        with open(model_description_path_ending, "w") as file:
-            json.dump(model_dict, file, sort_keys=True, indent=4)'''
+    try:
+        UNet.load_state_dict(torch.load(weight_path_ending))
+        print("Loaded weights from", weight_path_ending)
+    except FileNotFoundError:
+        print("Unable to find weight path "+ weight_path_ending + ". Initializing new weights.")
 
 
-    UNet.train()
-    #fix resnet layers
-
-    resnet_layers=torch.load('models/resnet_weight_names.pt')
-    for name,param in UNet.state_dict().items():
-        if name in resnet_layers:
-            param.requires_grad=False
-    #define critic as custom loss function for unet
-    crit=critic(trainset.data.shape[1]).to(device)
-    #load discriminator weights
-    crit_path=weight_path+'/'+weights_name+'_crit.pth'
-    if load_specific:
-        try:
-            crit.load_state_dict(torch.load(crit_path))
-            print('Loaded weights for discriminator from %s'%crit_path)
-        except FileNotFoundError:
-            print('Initialize new weights for discriminator')
-            crit.apply(weights_init_normal)
-    #optimizer
-    optimizer_g=optim.Adam(filter(lambda p: p.requires_grad, UNet.parameters()),lr=lr,betas=s.betas)
-    optimizer_c=optim.Adam(crit.parameters(),lr=lr,betas=s.betas)
-    criterion = nn.BCELoss().to(device)
-    #additional gan loss: l1 loss
-    l1loss = nn.L1Loss().to(device)
-    loss_hist=[]
-
+    #save the hyperparameters to a JSON-file for better oranization
+    model_description_path_ending = os.path.join(weight_path, s.model_description_name)
     # initialize model dict
     try:
         with open(model_description_path_ending, "r") as file:
@@ -183,12 +105,59 @@ def main(argv):
     except FileNotFoundError:
         model_dict = {}
 
+
+    prev_epochs=0
+    # save settings in dict if new weights are beeing initialized
+    if not weights_name in model_dict.keys():
+        model_dict[weights_name] = {
+            "loss_name": loss_path_ending,
+            "epochs": 0,
+            "batch_size": mbsize,
+            "lr": lr,
+            "betas": betas,
+            "image_loss_weight": image_loss_weight
+        }
+    else:
+        #load specified parameters from model_dict
+        params=model_dict[weights_name]
+        mbsize=params['batch_size']
+        betas=params['betas']
+        lr=params['lr']
+        image_loss_weight=params['image_loss_weight']
+        loss_path_ending=params['loss_name']
+        #memorize how many epochs already were trained if we continue training
+        prev_epochs=params['epochs']+1
+
+    
+
+    #define critic 
+    crit=critic(trainset.data.shape[1]).to(device)
+    #load discriminator weights
+    crit_path=weight_path+'/'+weights_name+'_crit.pth'
+    try:
+        crit.load_state_dict(torch.load(crit_path))
+        print('Loaded weights for discriminator from %s'%crit_path)
+    except FileNotFoundError:
+        print('Initialize new weights for discriminator')
+        crit.apply(weights_init_normal)
+    #optimizer
+    optimizer_g=optim.Adam(UNet.parameters(),lr=lr,betas=betas)
+    optimizer_c=optim.Adam(crit.parameters(),lr=lr,betas=betas)
+    criterion = nn.BCELoss().to(device)
+    #additional gan loss: l1 loss
+    l1loss = nn.L1Loss().to(device)
+    loss_hist=[]
+
+    
+
+    UNet.train()
+    crit.train()
     #convert to black and white image using following weights
     gray = torch.tensor([0.2989 ,0.5870, 0.1140 ])[:,None,None].float()
-    ones=torch.ones(mbsize,device=device)
-    zeros=torch.zeros(mbsize,device=device)
+    ones = torch.ones(mbsize,device=device)
+    zeros= torch.zeros(mbsize,device=device)
     # run over epochs
-    for e in (range(epochs) if not s.infinite_loop else count()):
+    for e in (range(prev_epochs, prev_epochs + epochs) if not infinite_loop else count(prev_epochs)):
         g_running,c_running=0,0
         #load batches
         for i,(image,_) in enumerate(trainloader):
@@ -236,11 +205,12 @@ def main(argv):
             c_running+=loss_c.item()
             loss_hist.append([e,i,loss_g.item(),loss_c.item()])
 
-            #report loss
+            #report running loss
             if (i+len(trainloader)*e)%report_freq==report_freq-1:
                 print('Epoch %i, batch %i: \tunet loss=%.2e, \tcritic loss=%.2e'%(e+1,i+1,g_running/report_freq,c_running/report_freq))
                 g_running=0
                 c_running=0
+
             if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
                 #save parameters
                 try:
@@ -250,7 +220,11 @@ def main(argv):
                     os.makedirs(weight_path)
                     torch.save(UNet.state_dict(),weight_path_ending)
                     torch.save(crit.state_dict(),crit_path)
-                print("saved parameters")
+                print("Parameters saved")
+
+                
+
+                
                 if s.save_loss:
                     #save loss history to file
                     try:
@@ -261,7 +235,15 @@ def main(argv):
                         os.makedirs(s.loss_path)
                         np.savetxt(loss_path_ending,loss_hist,'%e')
                     loss_hist=[]
-            
+
+        #update epoch count in dict after each epoch
+        model_dict[weights_name]["epochs"] = e  
+        #save it to file
+        try:
+            with open(model_description_path_ending, "w") as file:
+                json.dump(model_dict, file, sort_keys=True, indent=4)
+        except:
+            print('Could not save to model dictionary (JSON-file)')        
 
         
 

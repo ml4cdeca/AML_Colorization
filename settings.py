@@ -1,8 +1,8 @@
 
 from collections import namedtuple
 settings = {
-    'epochs': 10,
-    'infinite_loop':False,
+    'epochs': 20,
+    'infinite_loop':True,
     'classes': 3,
 
     # Hyperparameters
@@ -24,7 +24,6 @@ settings = {
     'model_description_name': 'model_description.json',
     # data paht
     'data_path':'data_red',
-    'dataset_type': 'gta',
     # report loss every x batch
     'report_freq':10,
 

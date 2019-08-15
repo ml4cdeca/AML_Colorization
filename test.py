@@ -37,7 +37,7 @@ def main(argv):
                 mode=1
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     in_shape=(3,32,32)
-    out_shape=(s.classes,32,32)
+    #out_shape=(s.classes,32,32)
     trainset = datasets.CIFAR10(root='./cifar-10', train=False,
                                         download=True, transform=transforms.ToTensor())
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=3,
