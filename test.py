@@ -44,22 +44,25 @@ def main(argv):
                                         shuffle=True, num_workers=2)
     print("Loaded dataset from", data_path)
     
-    #define model
-    UNet=None
     try:
         UNet=model() if mode==0 else unet()
-        UNet.load_state_dict(torch.load(weight_path))
+        #load weights
+        try:
+            UNet.load_state_dict(torch.load(weight_path))
+            print("Loaded network weights from", weight_path)
+        except FileNotFoundError:
+            print("Did not find weight files.")
+            sys.exit(2)
     except RuntimeError:
         #if the wrong mode was chosen: try the other one
         UNet=model() if mode==1 else unet()
-    #load weights
-    try:
-        UNet.load_state_dict(torch.load(weight_path))
-        print("Loaded network weights from", weight_path)
-    except FileNotFoundError:
-        print("Did not find weight files.")
-        sys.exit(2)
-    UNet.to(device)
+        #load weights
+        try:
+            UNet.load_state_dict(torch.load(weight_path))
+            print("Loaded network weights from", weight_path)
+        except FileNotFoundError:
+            print("Did not find weight files.")
+            sys.exit(2)  
     UNet.eval()
     gray = torch.tensor([0.2989 ,0.5870, 0.1140])[:,None,None].float()
     with torch.no_grad():
