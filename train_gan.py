@@ -84,17 +84,19 @@ def main(argv):
     #define model
     UNet=None
     try:
-        UNet=model().to(device) if mode==0 else unet().to(device)
-    except:
+        UNet=model() if mode==0 else unet()
+        UNet.load_state_dict(torch.load(weight_path))
+    except RuntimeError:
         #if the wrong mode was chosen: try the other one
-        UNet=model().to(device) if mode==1 else unet().to(device)
+        UNet=model() if mode==1 else unet()
     #load weights
     try:
-        UNet.load_state_dict(torch.load(weight_path_ending))
-        print("Loaded weights from", weight_path_ending)
+        UNet.load_state_dict(torch.load(weight_path))
+        print("Loaded network weights from", weight_path)
     except FileNotFoundError:
-        print("Unable to find weight path "+ weight_path_ending + ". Initializing new weights.")
-
+        print("Did not find weight files.")
+        sys.exit(2)
+    UNet.to(device)
 
     #save the hyperparameters to a JSON-file for better oranization
     model_description_path_ending = os.path.join(weight_path, s.model_description_name)

@@ -45,8 +45,13 @@ def main(argv):
     print("Loaded dataset from", data_path)
     
     #define model
-    UNet=model().to(device) if mode ==0 else unet().to(device)
-    
+    UNet=None
+    try:
+        UNet=model() if mode==0 else unet()
+        UNet.load_state_dict(torch.load(weight_path))
+    except RuntimeError:
+        #if the wrong mode was chosen: try the other one
+        UNet=model() if mode==1 else unet()
     #load weights
     try:
         UNet.load_state_dict(torch.load(weight_path))
@@ -54,6 +59,7 @@ def main(argv):
     except FileNotFoundError:
         print("Did not find weight files.")
         sys.exit(2)
+    UNet.to(device)
     UNet.eval()
     gray = torch.tensor([0.2989 ,0.5870, 0.1140])[:,None,None].float()
     with torch.no_grad():
