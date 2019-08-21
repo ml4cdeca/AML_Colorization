@@ -28,6 +28,7 @@ def main(argv):
     epochs = s.epochs
     beta1,beta2=s.betas
     infinite_loop=s.infinite_loop
+    data_path = s.data_path
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
         opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:",
