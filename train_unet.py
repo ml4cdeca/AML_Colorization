@@ -12,6 +12,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import dataloader
 import json
+from functions import load_places
 
 def main(argv):
     # setting argument defaults
@@ -87,12 +88,18 @@ def main(argv):
 
     #transformGray = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
     #transform = transforms.Compose([transforms.ToTensor()])#,transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-
-    trainset = datasets.CIFAR10(root='./cifar-10', train=True,
+    if data_path == './cifar-10':
+        trainset = datasets.CIFAR10(root='./cifar-10', train=True,
                                         download=True, transform=transforms.ToTensor())
+    elif data_path == 'places-test/' or 'places-small/':
+        trainset = load_places('places-test/')
+        print('places data successfully loaded')
+    else:
+        print('enter valid datapath')    
+    
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
                                         shuffle=True, num_workers=2)
-   
+    
     weight_path_ending=os.path.join(weight_path,time_namer+"_"+s.weights_name)
     print("NETWORK PATH:", weight_path_ending)
     '''
@@ -172,48 +179,83 @@ def main(argv):
     # run over epochs
     for e in (range(epochs) if not s.infinite_loop else count()):
         #load batches
-        for i,(image,c) in enumerate(trainloader):
-            #clear gradients
-            optimizer.zero_grad()
-            #convert to grayscale image
-            
-            #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
-            X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
-            image=image.float().to(device)
-            #generate colorized version with unet
-            unet_col=UNet(X)
-            #calculate loss
-            loss=criterion(unet_col, image)
-            #backpropagation
-            loss.backward()
-            loss_hist.append([e,i,loss.item()])
-            optimizer.step()
-            #report loss
-            if (i+len(trainloader)*e)%report_freq==report_freq-1:
-                print('Epoch %i, batch %i: loss=%.2e'%(e+1,i+1,
-                loss.item()))#np.convolve(loss_hist, np.ones((s.batch_size,))/s.batch_size, mode='valid')))
-            if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
-                #save parameters
-                try:
-                    torch.save(UNet.state_dict(),weight_path_ending)
-                except FileNotFoundError:
-                    os.makedirs(weight_path)
-                    torch.save(UNet.state_dict(),weight_path_ending)
-                print("saved parameters")
-                if s.save_loss:
-                    #save loss history to file
+        if data_path == './cifar-10':
+            for i,(image, c) in enumerate(trainloader):
+                #clear gradients
+                optimizer.zero_grad()
+                #convert to grayscale image
+                
+                #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
+                X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
+                image=image.float().to(device)
+                #generate colorized version with unet
+                unet_col=UNet(X)
+                #calculate loss
+                loss=criterion(unet_col, image)
+                #backpropagation
+                loss.backward()
+                loss_hist.append([e,i,loss.item()])
+                optimizer.step()
+                #report loss
+                if (i+len(trainloader)*e)%report_freq==report_freq-1:
+                    print('Epoch %i, batch %i: loss=%.2e'%(e+1,i+1,
+                    loss.item()))#np.convolve(loss_hist, np.ones((s.batch_size,))/s.batch_size, mode='valid')))
+                if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
+                    #save parameters
                     try:
-                        f=open(loss_path_ending,'a')
-                        np.savetxt(f,loss_hist,'%e')
-                        f.close()
+                        torch.save(UNet.state_dict(),weight_path_ending)
                     except FileNotFoundError:
-                        os.makedirs(s.loss_path)
-                        np.savetxt(loss_path_ending,loss_hist,'%e')
-                    loss_hist=[]
-            
-
-        
-
-
+                        os.makedirs(weight_path)
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                    print("saved parameters")
+                    if s.save_loss:
+                        #save loss history to file
+                        try:
+                            f=open(loss_path_ending,'a')
+                            np.savetxt(f,loss_hist,'%e')
+                            f.close()
+                        except FileNotFoundError:
+                            os.makedirs(s.loss_path)
+                            np.savetxt(loss_path_ending,loss_hist,'%e')
+                        loss_hist=[]
+        elif data_path == 'places-test/' or 'places-small/': 
+            for i,image in enumerate(trainloader):
+                #clear gradients
+                optimizer.zero_grad()
+                #convert to grayscale image
+                
+                #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
+                X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
+                image=image.float().to(device)
+                #generate colorized version with unet
+                unet_col=UNet(X)
+                #calculate loss
+                loss=criterion(unet_col, image)
+                #backpropagation
+                loss.backward()
+                loss_hist.append([e,i,loss.item()])
+                optimizer.step()
+                #report loss
+                if (i+len(trainloader)*e)%report_freq==report_freq-1:
+                    print('Epoch %i, batch %i: loss=%.2e'%(e+1,i+1,
+                    loss.item()))#np.convolve(loss_hist, np.ones((s.batch_size,))/s.batch_size, mode='valid')))
+                if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
+                    #save parameters
+                    try:
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                    except FileNotFoundError:
+                        os.makedirs(weight_path)
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                    print("saved parameters")
+                    if s.save_loss:
+                        #save loss history to file
+                        try:
+                            f=open(loss_path_ending,'a')
+                            np.savetxt(f,loss_hist,'%e')
+                            f.close()
+                        except FileNotFoundError:
+                            os.makedirs(s.loss_path)
+                            np.savetxt(loss_path_ending,loss_hist,'%e')
+                        loss_hist=[]
 if __name__ == '__main__':
     main(sys.argv[1:])

@@ -23,7 +23,7 @@ settings = {
     'loss_name':'loss.txt',
     'model_description_name': 'model_description.json',
     # data paht
-    'data_path':'data_red',
+    'data_path':'places-test/',
     # report loss every x batch
     'report_freq':10,
 
