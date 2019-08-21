@@ -30,7 +30,7 @@ def main(argv):
     epochs = s.epochs
     path_gta = path_city = None
     help='test.py -b <int> -p <string> -r <int> -w <string>'
-    dataset_type = s.dataset_type
+    #dataset_type = s.dataset_type
     try:
         opts, args = getopt.getopt(argv,"h:e:b:p:r:w:l:s:t:",["mbsize=","data-path=","report-freq=",'weight-path=','parent-name=', 'lr=', 'loss-norm=', 'batch-norm=', 'epochs=','save-freq=','timer-name=', 'dataset-type=', 'datapath-gta=', 'datapath-city='])
     except getopt.GetoptError:
