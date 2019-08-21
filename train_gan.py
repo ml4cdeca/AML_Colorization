@@ -66,19 +66,29 @@ def main(argv):
             beta2 = float(arg)
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    in_shape=(3,32,32)
+
+    if data_path == './cifar-10':
+        in_size = 32
+    elif data_path == 'places-test/' or 'places-small/':
+        in_size = 256
+    else:
+        print('enter valid datapath') 
+    in_shape=(3,in_size,in_size)
     #out_shape=(s.classes,32,32)
     betas=(beta1,beta2)
     weight_path_ending=os.path.join(weight_path,weights_name+'.pth')
 
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
     
-    
-    trainset = datasets.CIFAR10(root='./cifar-10', train=True,
+    if data_path == './cifar-10':
+        trainset = datasets.CIFAR10(root='./cifar-10', train=True,
                                         download=True, transform=transforms.ToTensor())
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
-                                        shuffle=True, num_workers=2)
-   
+    elif data_path == 'places-test/' or 'places-small/':
+        trainset = load_places('places-test/')
+        print('places data successfully loaded')
+    else:
+        print('enter valid datapath')
+
     print("NETWORK PATH:", weight_path_ending)
     
     #define model
@@ -171,78 +181,153 @@ def main(argv):
     for e in (range(prev_epochs, prev_epochs + epochs) if not infinite_loop else count(prev_epochs)):
         g_running,c_running=0,0
         #load batches
-        for i,(image,_) in enumerate(trainloader):
-            batch_size=image.shape[0]
-            #create ones and zeros tensors
-            
-            #convert to grayscale image
-            
-            #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
-            X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
-            image=image.float().to(device)
-            #----------------------------------------------------------------------------------------
-            ################################### Unet optimization ###################################
-            #----------------------------------------------------------------------------------------
-            #clear gradients
-            optimizer_g.zero_grad()
-            #generate colorized version with unet
-            unet_col=None
-            if mode==0:
-                unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
-            else:
-                unet_col=UNet(X)
-            #calculate loss as a function of how good the unet can fool the critic
-            fooling_loss=criterion(crit(unet_col)[:,0], ones[:batch_size])
-            #calculate how close the generated pictures are to the ground truth
-            image_loss=l1loss(unet_col,image)
-            #combine both losses and weight them
-            loss_g=fooling_loss+image_loss_weight*image_loss
-            #backpropagation
-            loss_g.backward()
-            optimizer_g.step()
+        if data_path == './cifar-10':           
+            for i,(image,_) in enumerate(trainloader):
+                batch_size=image.shape[0]
+                #create ones and zeros tensors
+                
+                #convert to grayscale image
+                
+                #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
+                X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
+                image=image.float().to(device)
+                #----------------------------------------------------------------------------------------
+                ################################### Unet optimization ###################################
+                #----------------------------------------------------------------------------------------
+                #clear gradients
+                optimizer_g.zero_grad()
+                #generate colorized version with unet
+                unet_col=None
+                if mode==0:
+                    unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
+                else:
+                    unet_col=UNet(X)
+                #calculate loss as a function of how good the unet can fool the critic
+                fooling_loss=criterion(crit(unet_col)[:,0], ones[:batch_size])
+                #calculate how close the generated pictures are to the ground truth
+                image_loss=l1loss(unet_col,image)
+                #combine both losses and weight them
+                loss_g=fooling_loss+image_loss_weight*image_loss
+                #backpropagation
+                loss_g.backward()
+                optimizer_g.step()
 
-            #----------------------------------------------------------------------------------------
-            ################################## Critic optimization ##################################
-            #----------------------------------------------------------------------------------------
-            optimizer_c.zero_grad()
-            real_loss=criterion(crit(image)[:,0],ones[:batch_size])
-            #requires no gradient in unet col
-            fake_loss=criterion(crit(unet_col.detach())[:,0],zeros[:batch_size])
-            loss_c=.5*(real_loss+fake_loss)
-            loss_c.backward()
-            optimizer_c.step()
+                #----------------------------------------------------------------------------------------
+                ################################## Critic optimization ##################################
+                #----------------------------------------------------------------------------------------
+                optimizer_c.zero_grad()
+                real_loss=criterion(crit(image)[:,0],ones[:batch_size])
+                #requires no gradient in unet col
+                fake_loss=criterion(crit(unet_col.detach())[:,0],zeros[:batch_size])
+                loss_c=.5*(real_loss+fake_loss)
+                loss_c.backward()
+                optimizer_c.step()
 
-            g_running+=loss_g.item()
-            c_running+=loss_c.item()
-            loss_hist.append([e,i,loss_g.item(),loss_c.item()])
+                g_running+=loss_g.item()
+                c_running+=loss_c.item()
+                loss_hist.append([e,i,loss_g.item(),loss_c.item()])
 
-            #report running loss
-            if (i+len(trainloader)*e)%report_freq==report_freq-1:
-                print('Epoch %i, batch %i: \tunet loss=%.2e, \tcritic loss=%.2e'%(e+1,i+1,g_running/report_freq,c_running/report_freq))
-                g_running=0
-                c_running=0
+                #report running loss
+                if (i+len(trainloader)*e)%report_freq==report_freq-1:
+                    print('Epoch %i, batch %i: \tunet loss=%.2e, \tcritic loss=%.2e'%(e+1,i+1,g_running/report_freq,c_running/report_freq))
+                    g_running=0
+                    c_running=0
 
-            if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
-                #save parameters
-                try:
-                    torch.save(UNet.state_dict(),weight_path_ending)
-                    torch.save(crit.state_dict(),crit_path)
-                except FileNotFoundError:
-                    os.makedirs(weight_path)
-                    torch.save(UNet.state_dict(),weight_path_ending)
-                    torch.save(crit.state_dict(),crit_path)
-                print("Parameters saved")
-
-                if s.save_loss:
-                    #save loss history to file
+                if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
+                    #save parameters
                     try:
-                        f=open(loss_path_ending,'a')
-                        np.savetxt(f,loss_hist,'%e')
-                        f.close()
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                        torch.save(crit.state_dict(),crit_path)
                     except FileNotFoundError:
-                        os.makedirs(s.loss_path)
-                        np.savetxt(loss_path_ending,loss_hist,'%e')
-                    loss_hist=[]
+                        os.makedirs(weight_path)
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                        torch.save(crit.state_dict(),crit_path)
+                    print("Parameters saved")
+
+                    if s.save_loss:
+                        #save loss history to file
+                        try:
+                            f=open(loss_path_ending,'a')
+                            np.savetxt(f,loss_hist,'%e')
+                            f.close()
+                        except FileNotFoundError:
+                            os.makedirs(s.loss_path)
+                            np.savetxt(loss_path_ending,loss_hist,'%e')
+                        loss_hist=[]
+
+        elif data_path == 'places-test/' or 'places-small/':             
+            for i,image in enumerate(trainloader):
+                batch_size=image.shape[0]
+                #create ones and zeros tensors
+                
+                #convert to grayscale image
+                
+                #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
+                X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
+                image=image.float().to(device)
+                #----------------------------------------------------------------------------------------
+                ################################### Unet optimization ###################################
+                #----------------------------------------------------------------------------------------
+                #clear gradients
+                optimizer_g.zero_grad()
+                #generate colorized version with unet
+                unet_col=None
+                if mode==0:
+                    unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
+                else:
+                    unet_col=UNet(X)
+                #calculate loss as a function of how good the unet can fool the critic
+                fooling_loss=criterion(crit(unet_col)[:,0], ones[:batch_size])
+                #calculate how close the generated pictures are to the ground truth
+                image_loss=l1loss(unet_col,image)
+                #combine both losses and weight them
+                loss_g=fooling_loss+image_loss_weight*image_loss
+                #backpropagation
+                loss_g.backward()
+                optimizer_g.step()
+
+                #----------------------------------------------------------------------------------------
+                ################################## Critic optimization ##################################
+                #----------------------------------------------------------------------------------------
+                optimizer_c.zero_grad()
+                real_loss=criterion(crit(image)[:,0],ones[:batch_size])
+                #requires no gradient in unet col
+                fake_loss=criterion(crit(unet_col.detach())[:,0],zeros[:batch_size])
+                loss_c=.5*(real_loss+fake_loss)
+                loss_c.backward()
+                optimizer_c.step()
+
+                g_running+=loss_g.item()
+                c_running+=loss_c.item()
+                loss_hist.append([e,i,loss_g.item(),loss_c.item()])
+
+                #report running loss
+                if (i+len(trainloader)*e)%report_freq==report_freq-1:
+                    print('Epoch %i, batch %i: \tunet loss=%.2e, \tcritic loss=%.2e'%(e+1,i+1,g_running/report_freq,c_running/report_freq))
+                    g_running=0
+                    c_running=0
+
+                if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
+                    #save parameters
+                    try:
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                        torch.save(crit.state_dict(),crit_path)
+                    except FileNotFoundError:
+                        os.makedirs(weight_path)
+                        torch.save(UNet.state_dict(),weight_path_ending)
+                        torch.save(crit.state_dict(),crit_path)
+                    print("Parameters saved")
+
+                    if s.save_loss:
+                        #save loss history to file
+                        try:
+                            f=open(loss_path_ending,'a')
+                            np.savetxt(f,loss_hist,'%e')
+                            f.close()
+                        except FileNotFoundError:
+                            os.makedirs(s.loss_path)
+                            np.savetxt(loss_path_ending,loss_hist,'%e')
+                        loss_hist=[]
 
         #update epoch count in dict after each epoch
         model_dict[weights_name]["epochs"] = e  
