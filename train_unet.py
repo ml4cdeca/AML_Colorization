@@ -76,8 +76,14 @@ def main(argv):
             path_city = arg
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    in_shape=(3,32,32)
-    out_shape=(s.classes,32,32)
+    if data_path == './cifar-10':
+        in_size = 32
+    elif data_path == 'places-test/' or 'places-small/':
+        in_size = 256
+    else:
+        print('enter valid datapath') 
+    in_shape=(3,in_size,in_size)
+    out_shape=(s.classes,in_size,in_size)
 
     weight_path_ending=os.path.join(weight_path,time_namer+"_"+s.weights_name)
     print("NETWORK PATH:", weight_path_ending)
