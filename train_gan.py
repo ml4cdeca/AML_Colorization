@@ -14,6 +14,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import dataloader
 import json
+from functions import load_places
 
 def main(argv):
     # setting argument defaults
