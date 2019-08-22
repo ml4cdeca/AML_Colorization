@@ -185,9 +185,9 @@ def main(argv):
         #if data_path == './cifar-10':           
         for i,batch in enumerate(trainloader):
             if data_path == './cifar-10':
-                (images,_) = batch
+                (image,_) = batch
             elif 'places' in data_path:
-                images = batch
+                image = batch
             batch_size=image.shape[0]
             #create ones and zeros tensors
             
