@@ -91,6 +91,9 @@ def main(argv):
     else:
         print('enter valid datapath')
 
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
+                                        shuffle=True, num_workers=2)
+
     print("NETWORK PATH:", weight_path_ending)
     
     #define model
