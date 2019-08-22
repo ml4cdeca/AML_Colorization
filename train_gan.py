@@ -162,6 +162,7 @@ def main(argv):
     #define critic 
     
     if data_path == './cifar-10':
+        print(trainset.data.shape[1])
         crit=critic(trainset.data.shape[1]).to(device)
     elif data_path == 'places-test/' or 'places-small/':
         crit=critic(256).to(device)
