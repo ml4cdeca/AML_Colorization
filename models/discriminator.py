@@ -9,7 +9,7 @@ class critic(nn.Module):
                                convBlock(16,32),
                                convBlock(32,64),
                                convBlock(64,128))
-        proc_im_size=im_size//(2**4)
+        proc_im_size=im_size/(2**4)
         print(128*proc_im_size**2)
         self.fc=nn.Linear(128*proc_im_size**2,1)
         self.sig=nn.Sigmoid()
