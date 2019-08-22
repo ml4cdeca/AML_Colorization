@@ -10,9 +10,10 @@ import sys, getopt
 import numpy as np
 import matplotlib.pyplot as plt
 from show import show_colorization
+from functions import load_trainset
 def main(argv):
     
-    data_path = './cifar-10'
+    data_path = s.data_path
     weight_path = s.weights_path
     mode=0
     try:
@@ -36,10 +37,15 @@ def main(argv):
             if arg in ('u'):
                 mode=1
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    in_shape=(3,32,32)
+
+    if data_path == './cifar-10':
+        in_size = 32
+    elif data_path == 'places-test/' or 'places-small/':
+        in_size = 256
+    in_shape=(3,in_size,in_size)
     #out_shape=(s.classes,32,32)
-    trainset = datasets.CIFAR10(root='./cifar-10', train=False,
-                                        download=True, transform=transforms.ToTensor())
+
+    trainset = load_trainset(data_path)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=3,
                                         shuffle=True, num_workers=2)
     print("Loaded dataset from", data_path)
@@ -48,7 +54,7 @@ def main(argv):
         UNet=model() if mode==0 else unet()
         #load weights
         try:
-            UNet.load_state_dict(torch.load(weight_path))
+            UNet.load_state_dict(torch.load(weight_path, map_location='cpu'))
             print("Loaded network weights from", weight_path)
         except FileNotFoundError:
             print("Did not find weight files.")
@@ -58,7 +64,7 @@ def main(argv):
         UNet=model() if mode==1 else unet()
         #load weights
         try:
-            UNet.load_state_dict(torch.load(weight_path))
+            UNet.load_state_dict(torch.load(weight_path, map_location='cpu'))
             print("Loaded network weights from", weight_path)
         except FileNotFoundError:
             print("Did not find weight files.")
@@ -66,7 +72,11 @@ def main(argv):
     UNet.eval()
     gray = torch.tensor([0.2989 ,0.5870, 0.1140])[:,None,None].float()
     with torch.no_grad():
-        for i,(image,_) in enumerate(trainloader):
+        for i,batch in enumerate(trainloader):
+            if data_path == './cifar-10':
+                (image,_) = batch
+            elif 'places' in data_path:
+                image = batch
             #convert to grayscale image
             
             #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
