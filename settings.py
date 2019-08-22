@@ -22,8 +22,8 @@ settings = {
     'loss_path':'weights',
     'loss_name':'loss.txt',
     'model_description_name': 'model_description.json',
-    # data paht
-    'data_path':'places-test/',
+    # data path: 'places-test/','./cifar-10'
+    'data_path':'./cifar-10', 
     # report loss every x batch
     'report_freq':10,
 

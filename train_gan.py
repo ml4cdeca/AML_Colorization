@@ -83,10 +83,10 @@ def main(argv):
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
     
     if data_path == './cifar-10':
-        trainset = datasets.CIFAR10(root='./cifar-10', train=True,
+        trainset = datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transforms.ToTensor())
     elif data_path == 'places-test/' or 'places-small/':
-        trainset = load_places('places-test/')
+        trainset = load_places(data_path)
         print('places data successfully loaded')
     else:
         print('enter valid datapath')
