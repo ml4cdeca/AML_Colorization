@@ -108,7 +108,7 @@ def main(argv):
             print("Loaded network weights from", weight_path)
         except FileNotFoundError:
             print("Did not find weight files.")
-            sys.exit(2)
+            #sys.exit(2)
     except RuntimeError:
         #if the wrong mode was chosen: try the other one
         UNet=model() if mode==1 else unet()
@@ -120,7 +120,7 @@ def main(argv):
             mode = (mode +1) %2
         except FileNotFoundError:
             print("Did not find weight files.")
-            sys.exit(2)    
+            #sys.exit(2)    
     UNet.to(device)
 
     #save the hyperparameters to a JSON-file for better oranization
