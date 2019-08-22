@@ -84,7 +84,6 @@ def main(argv):
 
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
     
-    data_path = 
     if data_path == './cifar-10':
         trainset = datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transforms.ToTensor())
