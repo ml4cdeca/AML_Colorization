@@ -75,9 +75,8 @@ def main(argv):
         in_size = 32
     elif data_path == 'places-test/' or 'places-small/':
         in_size = 256
-    else:
-        print('enter valid datapath') 
     in_shape=(3,in_size,in_size)
+    
     #out_shape=(s.classes,32,32)
     betas=(beta1,beta2)
     weight_path_ending=os.path.join(weight_path,weights_name+'.pth')
@@ -260,80 +259,6 @@ def main(argv):
                         np.savetxt(loss_path_ending,loss_hist,'%e')
                     loss_hist=[]
 
-        '''elif 'places' in data_path:
-            for i,image in enumerate(trainloader):
-                batch_size=image.shape[0]
-                #create ones and zeros tensors
-                
-                #convert to grayscale image
-                
-                #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
-                X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
-                image=image.float().to(device)
-                #----------------------------------------------------------------------------------------
-                ################################### Unet optimization ###################################
-                #----------------------------------------------------------------------------------------
-                #clear gradients
-                optimizer_g.zero_grad()
-                #generate colorized version with unet
-                unet_col=None
-                if mode==0:
-                    unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
-                else:
-                    unet_col=UNet(X)
-                #calculate loss as a function of how good the unet can fool the critic
-                fooling_loss=criterion(crit(unet_col)[:,0], ones[:batch_size])
-                #calculate how close the generated pictures are to the ground truth
-                image_loss=l1loss(unet_col,image)
-                #combine both losses and weight them
-                loss_g=fooling_loss+image_loss_weight*image_loss
-                #backpropagation
-                loss_g.backward()
-                optimizer_g.step()
-
-                #----------------------------------------------------------------------------------------
-                ################################## Critic optimization ##################################
-                #----------------------------------------------------------------------------------------
-                optimizer_c.zero_grad()
-                real_loss=criterion(crit(image)[:,0],ones[:batch_size])
-                #requires no gradient in unet col
-                fake_loss=criterion(crit(unet_col.detach())[:,0],zeros[:batch_size])
-                loss_c=.5*(real_loss+fake_loss)
-                loss_c.backward()
-                optimizer_c.step()
-
-                g_running+=loss_g.item()
-                c_running+=loss_c.item()
-                loss_hist.append([e,i,loss_g.item(),loss_c.item()])
-
-                #report running loss
-                if (i+len(trainloader)*e)%report_freq==report_freq-1:
-                    print('Epoch %i, batch %i: \tunet loss=%.2e, \tcritic loss=%.2e'%(e+1,i+1,g_running/report_freq,c_running/report_freq))
-                    g_running=0
-                    c_running=0
-
-                if s.save_weights and (i+len(trainloader)*e)%save_freq==save_freq-1:
-                    #save parameters
-                    try:
-                        torch.save(UNet.state_dict(),weight_path_ending)
-                        torch.save(crit.state_dict(),crit_path)
-                    except FileNotFoundError:
-                        os.makedirs(weight_path)
-                        torch.save(UNet.state_dict(),weight_path_ending)
-                        torch.save(crit.state_dict(),crit_path)
-                    print("Parameters saved")
-
-                    if s.save_loss:
-                        #save loss history to file
-                        try:
-                            f=open(loss_path_ending,'a')
-                            np.savetxt(f,loss_hist,'%e')
-                            f.close()
-                        except FileNotFoundError:
-                            os.makedirs(s.loss_path)
-                            np.savetxt(loss_path_ending,loss_hist,'%e')
-                        loss_hist=[]'''
-
         #update epoch count in dict after each epoch
         model_dict[weights_name]["epochs"] = e  
         #save it to file
@@ -342,8 +267,6 @@ def main(argv):
                 json.dump(model_dict, file, sort_keys=True, indent=4)
         except:
             print('Could not save to model dictionary (JSON-file)')        
-
-        
 
 def weights_init_normal(m):
     classname = m.__class__.__name__
