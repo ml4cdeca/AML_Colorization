@@ -32,7 +32,7 @@ def main(argv):
     data_path = s.data_path
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
-        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:d:",
+        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:p:",
             ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=','data_path='
             'beta1=','beta2='])
     except getopt.GetoptError:
@@ -62,7 +62,7 @@ def main(argv):
             lr = float(arg)
         elif opt=='-m':
             mode = arg in ('u','1','unet')
-        elif opt in ("-d", "--data_path"):
+        elif opt in ("-p", "--data_path"):
             data_path = str(arg)
         elif opt=='--beta1':
             beta1 = float(arg)
@@ -76,7 +76,7 @@ def main(argv):
     elif data_path == 'places-test/' or 'places-small/':
         in_size = 256
     in_shape=(3,in_size,in_size)
-    
+
     #out_shape=(s.classes,32,32)
     betas=(beta1,beta2)
     weight_path_ending=os.path.join(weight_path,weights_name+'.pth')
