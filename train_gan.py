@@ -32,8 +32,8 @@ def main(argv):
     data_path = s.data_path
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
-        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:",
-            ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=',
+        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:d:",
+            ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=','data_path='
             'beta1=','beta2='])
     except getopt.GetoptError:
         print(help)
@@ -62,6 +62,8 @@ def main(argv):
             lr = float(arg)
         elif opt=='-m':
             mode = arg in ('u','1','unet')
+        elif opt in ("-d", "--data_path"):
+            data_path = str(arg)
         elif opt=='--beta1':
             beta1 = float(arg)
         elif opt=='--beta2':
