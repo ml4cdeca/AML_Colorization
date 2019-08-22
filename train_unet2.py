@@ -13,6 +13,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import dataloader
 import json
+from functions import load_trainset
 
 def main(argv):
     # setting argument defaults
@@ -31,7 +32,7 @@ def main(argv):
     epochs = s.epochs
     path_gta = path_city = None
     help='test.py -b <int> -p <string> -r <int> -w <string>'
-    dataset_type = s.dataset_type
+    #dataset_type = s.dataset_type
     try:
         opts, args = getopt.getopt(argv,"h:e:b:p:r:w:l:s:t:n:",["mbsize=","data-path=","report-freq=",'weight-path=','parent-name=', 'lr=', 'loss-norm=', 'batch-norm=', 'epochs=','save-freq=','timer-name=', 'dataset-type=', 'datapath-gta=', 'datapath-city='])
     except getopt.GetoptError:
@@ -75,8 +76,13 @@ def main(argv):
             path_city = arg
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    in_shape=(3,32,32)
-    out_shape=(s.classes,32,32)
+    if data_path == './cifar-10':
+        in_size = 32
+    elif 'places' in data_path:
+        in_size = 256
+    in_shape=(3,in_size,in_size)
+    out_shape=(s.classes,in_size,in_size)
+
 
     weight_path_ending=os.path.join(weight_path,weights_name)
     print("NETWORK PATH:", weight_path_ending)
@@ -88,8 +94,7 @@ def main(argv):
     #transformGray = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
     #transform = transforms.Compose([transforms.ToTensor()])#,transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
-    trainset = datasets.CIFAR10(root='./cifar-10', train=True,
-                                        download=True, transform=transforms.ToTensor())
+    trainset = load_trainset(data_path)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
                                         shuffle=True, num_workers=2)
    
@@ -152,10 +157,10 @@ def main(argv):
 
     UNet.train()
     #fix resnet layers
-    resnet_layers=torch.load('unet/resnet_weight_names.pt')
-    for name,param in UNet.state_dict().items():
-        if name in resnet_layers:
-            param.requires_grad=False
+    #resnet_layers=torch.load('unet/resnet_weight_names.pt')
+    #for name,param in UNet.state_dict().items():
+    #    if name in resnet_layers:
+    #        param.requires_grad=False
     
     #optimizer
     optimizer=optim.Adam(filter(lambda p: p.requires_grad, UNet.parameters()),lr=lr,betas=s.betas)
@@ -175,7 +180,11 @@ def main(argv):
     # run over epochs
     for e in (range(epochs) if not s.infinite_loop else count()):
         #load batches
-        for i,(image,c) in enumerate(trainloader):
+        for i,batch in enumerate(trainloader):
+            if data_path == './cifar-10':
+                (image,_) = batch
+            elif 'places' in data_path:
+                image = batch
             #clear gradients
             optimizer.zero_grad()
             #convert to grayscale image

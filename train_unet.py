@@ -29,7 +29,6 @@ def main(argv):
     parent_name = None
     epochs = s.epochs
     path_gta = path_city = None
-    data_path = s.data_path
 
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     #dataset_type = s.dataset_type
