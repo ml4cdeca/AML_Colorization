@@ -73,7 +73,7 @@ def main(argv):
 
     if data_path == './cifar-10':
         in_size = 32
-    elif data_path == 'places-test/' or 'places-small/':
+    elif 'places' in data_path:
         in_size = 256
     in_shape=(3,in_size,in_size)
 

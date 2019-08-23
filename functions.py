@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import os
+import torchvision.datasets as datasets
+from torchvision import transforms
+
 
 def load_places(folder):
     images = []
