@@ -15,7 +15,6 @@ import torchvision.datasets as datasets
 from torch.utils.data import dataloader
 import json
 from functions import load_trainset
-from functions import PlacesDataset
 
 def main(argv):
     # setting argument defaults
@@ -83,16 +82,11 @@ def main(argv):
     weight_path_ending=os.path.join(weight_path,weights_name+'.pth')
 
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
-    
-    '''
+
     trainset = load_trainset(data_path)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
                                         shuffle=True, num_workers=2)
-    '''
-    trainset = PlacesDataset('places-test')
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
-                                        shuffle=True, num_workers=2)
-
+ 
     print("NETWORK PATH:", weight_path_ending)
     
     #define model
