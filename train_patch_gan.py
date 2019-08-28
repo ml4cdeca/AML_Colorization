@@ -218,9 +218,11 @@ def main(argv):
             ################################## Critic optimization ##################################
             #----------------------------------------------------------------------------------------
             optimizer_c.zero_grad()
-            real_loss=criterion(crit(torch.cat((X,image),dim=1)).mean(dim=(1,2,3)),ones[:batch_size])
+            real_crit = crit(torch.cat((X,image),dim=1))
+            real_loss=criterion(real_crit,torch.ones(real_crit.shape))
             #requires no gradient in unet col
-            fake_loss=criterion(crit(torch.cat((X,unet_col),dim=1)).mean(dim=(1,2,3)),zeros[:batch_size])
+            fake_crit = crit(torch.cat((X,unet_col),dim=1))
+            fake_loss=criterion(crit(torch.cat((X,unet_col),dim=1)),torch.zeros(fake_crit.shape))
             loss_c=.5*(real_loss+fake_loss)
             loss_c.backward()
             optimizer_c.step()
