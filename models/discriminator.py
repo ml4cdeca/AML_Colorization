@@ -32,8 +32,7 @@ class markov_critic(nn.Module):
         self.cnn = nn.Sequential(convBlock(4,16,kernel_size=2),
                                 convBlock(16,32,kernel_size=2),
                                 convBlock(32,64,kernel_size=2),
-                                convBlock(64,128,kernel_size=2),
-                                convBlock(128,1,kernel_size=1))
+                                convBlock(64,1,kernel_size=1))
         self.sig=nn.Sigmoid()
 
     def forward(self, x):
