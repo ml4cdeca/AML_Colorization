@@ -27,8 +27,8 @@ class markov_critic(nn.Module):
     (generator loss will be cronstructed form mean)
     '''
     def __init__(self):
-        super(critic,self).__init__()
-        
+        super(markov_critic,self).__init__()
+
         self.cnn = nn.Sequential(convBlock(6,16,kernel_size=2),
                                 convBlock(16,32,kernel_size=2),
                                 convBlock(32,64,kernel_size=2),
