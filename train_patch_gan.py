@@ -206,7 +206,7 @@ def main(argv):
                 unet_col=UNet(X)
             #calculate loss as a function of how good the unet can fool the critic
             print(X.shape,unet_col.shape)
-            fooling_loss = criterion(crit(torch.cat((X,unet_col))).mean(dim=(1,2)), ones[:batch_size])
+            fooling_loss = criterion(crit(torch.cat((X,unet_col),dim=1)).mean(dim=(1,2)), ones[:batch_size])
             #calculate how close the generated pictures are to the ground truth
             image_loss=l1loss(unet_col,image)
             #combine both losses and weight them
@@ -219,9 +219,9 @@ def main(argv):
             ################################## Critic optimization ##################################
             #----------------------------------------------------------------------------------------
             optimizer_c.zero_grad()
-            real_loss=criterion(crit(torch.cat((X,image))).mean(dim=(1,2)),ones[:batch_size])
+            real_loss=criterion(crit(torch.cat((X,image),dim=1)).mean(dim=(1,2)),ones[:batch_size])
             #requires no gradient in unet col
-            fake_loss=criterion(crit(torch.cat((X,unet_col))).mean(dim=(1,2)),zeros[:batch_size])
+            fake_loss=criterion(crit(torch.cat((X,unet_col),dim=1)).mean(dim=(1,2)),zeros[:batch_size])
             loss_c=.5*(real_loss+fake_loss)
             loss_c.backward()
             optimizer_c.step()
