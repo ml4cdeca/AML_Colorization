@@ -219,10 +219,10 @@ def main(argv):
             #----------------------------------------------------------------------------------------
             optimizer_c.zero_grad()
             real_crit = crit(torch.cat((X,image),dim=1))
-            real_loss=criterion(real_crit,torch.ones(real_crit.shape))
+            real_loss=criterion(real_crit,torch.ones(real_crit.shape).to(device))
             #requires no gradient in unet col
             fake_crit = crit(torch.cat((X,unet_col),dim=1))
-            fake_loss=criterion(crit(torch.cat((X,unet_col),dim=1)),torch.zeros(fake_crit.shape))
+            fake_loss=criterion(fake_crit,torch.zeros(fake_crit.shape).to(device))
             loss_c=.5*(real_loss+fake_loss)
             loss_c.backward()
             optimizer_c.step()
