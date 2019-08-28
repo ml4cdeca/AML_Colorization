@@ -21,7 +21,7 @@ class critic(nn.Module):
 
 class markov_critic(nn.Module):
     '''
-    input: grayscale (first 3 channels) and colored (last 3 channels) image
+    input: grayscale (first channel) and colored (last 3 channels) image
 
     return: real/fake classification of "patches" of input as tensor
     (generator loss will be cronstructed form mean)
@@ -29,7 +29,7 @@ class markov_critic(nn.Module):
     def __init__(self):
         super(markov_critic,self).__init__()
 
-        self.cnn = nn.Sequential(convBlock(6,16,kernel_size=2),
+        self.cnn = nn.Sequential(convBlock(4,16,kernel_size=2),
                                 convBlock(16,32,kernel_size=2),
                                 convBlock(32,64,kernel_size=2),
                                 convBlock(64,128,kernel_size=2),
