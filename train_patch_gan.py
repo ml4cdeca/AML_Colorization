@@ -212,7 +212,7 @@ def main(argv):
             #combine both losses and weight them
             loss_g=fooling_loss+image_loss_weight*image_loss
             #backpropagation
-            loss_g.backward()
+            loss_g.backward(retain_graph=True)
             optimizer_g.step()
 
             #----------------------------------------------------------------------------------------
