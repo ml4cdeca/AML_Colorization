@@ -205,6 +205,7 @@ def main(argv):
             else:
                 unet_col=UNet(X)
             #calculate loss as a function of how good the unet can fool the critic
+            print(X.shape,unet_col.shape)
             fooling_loss = criterion(crit(torch.cat((X,unet_col))).mean(dim=(1,2)), ones[:batch_size])
             #calculate how close the generated pictures are to the ground truth
             image_loss=l1loss(unet_col,image)
