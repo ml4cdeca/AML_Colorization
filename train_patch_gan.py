@@ -219,10 +219,10 @@ def main(argv):
             #----------------------------------------------------------------------------------------
             optimizer_c.zero_grad()
             real_crit = crit(torch.cat((X,image),dim=1))
-            real_loss=criterion(real_crit.mean(dim=(1,2,3)), ones[:batch_size])   #,torch.ones(real_crit.shape).to(device))
+            real_loss=criterion(real_crit, torch.ones(real_crit.shape).to(device))
             #requires no gradient in unet col
             fake_crit = crit(torch.cat((X,unet_col.detach()),dim=1))
-            fake_loss=criterion(fake_crit.mean(dim=(1,2,3)), zeros[:batch_size])   # ,torch.zeros(fake_crit.shape).to(device))
+            fake_loss=criterion(fake_crit ,torch.zeros(fake_crit.shape).to(device))
             loss_c=.5*(real_loss+fake_loss)
             loss_c.backward()
             optimizer_c.step()
@@ -233,7 +233,6 @@ def main(argv):
 
             #report running loss
             if (i+len(trainloader)*e)%report_freq==report_freq-1:
-                print(fake_crit.shape)
                 print('Epoch %i, batch %i: \tunet loss=%.2e, \tcritic loss=%.2e'%(e+1,i+1,g_running/report_freq,c_running/report_freq))
                 g_running=0
                 c_running=0
