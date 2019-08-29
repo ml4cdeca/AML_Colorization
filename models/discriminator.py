@@ -21,7 +21,7 @@ class critic(nn.Module):
 
 class gray_critic(nn.Module):
     def __init__(self,im_size):
-        super(critic,self).__init__()
+        super(gray_critic,self).__init__()
 
         self.cnn=nn.Sequential(convBlock(4,16),
                                convBlock(16,32),
