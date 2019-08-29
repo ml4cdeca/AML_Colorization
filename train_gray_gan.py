@@ -222,7 +222,7 @@ def main(argv):
             optimizer_c.zero_grad()
             real_loss=criterion(crit(torch.cat((X,image),dim=1))[:,0],ones[:batch_size])
             #requires no gradient in unet col
-            fake_loss=criterion(crit(torch.cat((X,unet_col),dim=1))[:,0],zeros[:batch_size])
+            fake_loss=criterion(crit(torch.cat((X,unet_col.detach()),dim=1))[:,0],zeros[:batch_size])
             loss_c=.5*(real_loss+fake_loss)
             loss_c.backward()
             optimizer_c.step()
