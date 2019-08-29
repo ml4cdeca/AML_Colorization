@@ -19,6 +19,24 @@ class critic(nn.Module):
         x=self.fc(x)
         return self.sig(x)
 
+class gray_critic(nn.Module):
+    def __init__(self,im_size):
+        super(critic,self).__init__()
+
+        self.cnn=nn.Sequential(convBlock(4,16),
+                               convBlock(16,32),
+                               convBlock(32,64),
+                               convBlock(64,128))
+        proc_im_size=im_size//(2**4)
+        self.fc=nn.Linear(128*proc_im_size**2,1)
+        self.sig=nn.Sigmoid()
+
+    def forward(self,x):
+        x=self.cnn(x)
+        x=x.view(x.shape[0],-1)
+        x=self.fc(x)
+        return self.sig(x)
+
 class markov_critic(nn.Module):
     '''
     input: grayscale (first channel) and colored (last 3 channels) image
