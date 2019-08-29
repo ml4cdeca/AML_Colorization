@@ -211,7 +211,7 @@ def main(argv):
             #combine both losses and weight them
             loss_g=fooling_loss+image_loss_weight*image_loss
             #backpropagation
-            loss_g.backward(retain_graph=True)
+            loss_g.backward()
             optimizer_g.step()
 
             #----------------------------------------------------------------------------------------
@@ -221,7 +221,7 @@ def main(argv):
             real_crit = crit(torch.cat((X,image),dim=1))
             real_loss=criterion(real_crit,torch.ones(real_crit.shape).to(device))
             #requires no gradient in unet col
-            fake_crit = crit(torch.cat((X,unet_col),dim=1))
+            fake_crit = crit(torch.cat((X,unet_col.detach()),dim=1))
             fake_loss=criterion(fake_crit,torch.zeros(fake_crit.shape).to(device))
             loss_c=.5*(real_loss+fake_loss)
             loss_c.backward()
