@@ -79,7 +79,7 @@ class double_conv_pool(nn.Module):
                 nn.ReLU(inplace=True)
             ]
             if drop_rate > 0:
-                self.layer_list = self.layer_list[:3] + [nn.Dropout2(drop_rate)] + self.layer_list[3:] + [nn.Dropout2d(drop_rate)]
+                self.layer_list = self.layer_list[:3] + [nn.Dropout2d(drop_rate)] + self.layer_list[3:] + [nn.Dropout2d(drop_rate)]
 
         else:
             self.layer_list = [
@@ -89,7 +89,7 @@ class double_conv_pool(nn.Module):
                 nn.ReLU(inplace=True)
             ]
             if drop_rate > 0:
-                self.layer_list = self.layer_list.append(nn.Dropout2(drop_rate))
+                self.layer_list = self.layer_list.append(nn.Dropout2d(drop_rate))
         
         self.double_conv = nn.Sequential(*self.layer_list)
 
@@ -113,7 +113,7 @@ class double_conv(nn.Module):
                 nn.ReLU(inplace=True)
             ]
             if drop_rate > 0:
-                self.layer_list = self.layer_list[:3] + [nn.Dropout2(drop_rate)] + self.layer_list[3:] + [nn.Dropout2d(drop_rate)]
+                self.layer_list = self.layer_list[:3] + [nn.Dropout2d(drop_rate)] + self.layer_list[3:] + [nn.Dropout2d(drop_rate)]
 
         else:
             self.layer_list = [
@@ -123,7 +123,7 @@ class double_conv(nn.Module):
                 nn.ReLU(inplace=True)
             ]
             if drop_rate > 0:
-                self.layer_list = self.layer_list.append(nn.Dropout2(drop_rate))
+                self.layer_list = self.layer_list.append(nn.Dropout2d(drop_rate))
 
             self.double_conv = nn.Sequential(*self.layer_list)
 
