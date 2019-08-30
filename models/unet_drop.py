@@ -125,7 +125,7 @@ class double_conv(nn.Module):
             if drop_rate > 0:
                 self.layer_list = self.layer_list.append(nn.Dropout2d(drop_rate))
 
-            self.double_conv = nn.Sequential(*self.layer_list)
+        self.double_conv = nn.Sequential(*self.layer_list)
 
     def forward(self, x):
         x = self.double_conv(x)
