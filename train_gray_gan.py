@@ -169,7 +169,7 @@ def main(argv):
     l1loss = nn.L1Loss().to(device)
     loss_hist=[]
 
-    
+    image_loss_weight = 10
 
     UNet.train()
     crit.train()
