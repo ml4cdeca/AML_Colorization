@@ -12,6 +12,7 @@ settings = {
     'loss_norm': False,
     'batch_norm': True,
     'image_loss_weight':50,
+    'drop_rate':.25
 
     # Other
     'save_freq': 500,

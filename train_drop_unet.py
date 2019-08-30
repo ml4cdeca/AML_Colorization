@@ -30,10 +30,11 @@ def main(argv):
     beta1,beta2=s.betas
     infinite_loop=s.infinite_loop
     data_path = s.data_path
+    drop_rate = s.drop_rate
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
-        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:p:",
-            ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=','data_path='
+        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:p:d:",
+            ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=','data_path=','drop_rate='
             'beta1=','beta2='])
     except getopt.GetoptError:
         print(help)
@@ -64,6 +65,8 @@ def main(argv):
             mode = arg in ('u','1','unet')
         elif opt in ("-p", "--data_path"):
             data_path = str(arg)
+        elif opt in ("-d", "--drop_rate"):
+            drop_rate = float(arg)
         elif opt=='--beta1':
             beta1 = float(arg)
         elif opt=='--beta2':
@@ -88,8 +91,6 @@ def main(argv):
                                         shuffle=True, num_workers=2)
  
     print("NETWORK PATH:", weight_path_ending)
-    
-    drop_rate = .25
 
     #define model
     UNet=None
