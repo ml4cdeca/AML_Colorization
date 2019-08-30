@@ -136,6 +136,7 @@ class double_conv(nn.Module):
 class up_conv(nn.Module):
     def __init__(self, in_channels, bn, drop_rate=0):
         super(up_conv,self).__init__()
+        self.drop_rate = drop_rate
         # half the channels, double the resolution
         self.upsample=nn.ConvTranspose2d(in_channels,in_channels//2,2,stride=2)
         self.double_conv = double_conv(in_channels,in_channels//2, bn, drop_rate)
@@ -146,6 +147,6 @@ class up_conv(nn.Module):
         x=self.upsample(x)
         # concatenate skip-connection and x
         x=torch.cat([skip,x],dim=1)
-        x=self.double_conv(x, drop_rate)
+        x=self.double_conv(x, self.drop_rate)
         return x
 
