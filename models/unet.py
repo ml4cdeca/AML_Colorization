@@ -56,10 +56,7 @@ class unet(nn.Module):
         x = self.expanse3(x2,x)
         x = self.expanse4(x1,x)
         x = self.out_conv(x)
-        if self.classes==3:
-            return torch.sigmoid(x)
-        if self.classes==2: #lab
-            return torch.tanh(x)
+        return torch.sigmoid(x)
 
 
 # contraction: building block of the left side of a unet

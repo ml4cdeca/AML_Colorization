@@ -99,7 +99,7 @@ def main(argv):
                 if dataset == 0: #cifar 10
                     image=np.transpose(image,(0,3,2,1))
                     image=np.transpose(color.rgb2lab(image),(0,3,2,1))
-                    image=torch.from_numpy((image-np.array([50,0,0])[None,:,None,None])/np.array([50,128,128])[None,:,None,None]).float()
+                    image=torch.from_numpy((image+np.array([0,128,128])[None,:,None,None])/np.array([100,255,255])[None,:,None,None]).float()
                 X=torch.unsqueeze(image[:,0,:,:],1).to(device) #set X to the Lightness of the image
                 image=image[:,1:,:,:].to(device) #image is a and b channel
             else:

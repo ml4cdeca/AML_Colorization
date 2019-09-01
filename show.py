@@ -17,11 +17,13 @@ def show_colorization(pred,truth=None,original=None,lab=False):
     if lab:
         for i in range(N):
             if truth is not None and original is not None:
-                gray=.5*(1+original[i].detach().cpu().numpy())
+                gray=original[i].detach().cpu().numpy()
                 #print(truth[i].detach().cpu().numpy().min(),truth[i].detach().cpu().numpy().max())
-                lab_pred=np.concatenate((100*gray,np.array([128,128])[:,None,None]*pred[i].detach().cpu().numpy()))
-                lab_orig=np.concatenate((100*gray,np.array([128,128])[:,None,None]*truth[i].detach().cpu().numpy()))
-
+                lab_pred=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pred[i].detach().cpu().numpy()))
+                lab_orig=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*truth[i].detach().cpu().numpy()))
+                #for arr in (lab_orig[0,...],lab_orig[1,...],truth[i].detach().cpu().numpy()[0,...],truth[i].detach().cpu().numpy()[1,...],
+                #            lab_pred[0,...],lab_pred[1,...],pred[i].detach().cpu().numpy()[0,...],pred[i].detach().cpu().numpy()[1,...]):
+                #    print(arr.min(),arr.max())
                 plt.subplot(N,3,counter[i,0])
                 if i==0:
                     plt.title('Input image')

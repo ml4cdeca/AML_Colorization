@@ -24,8 +24,8 @@ class PlacesDataset(Dataset):
         self.transform = transform
         self.lab=lab
         #need to use transforms.Normalize in future but currently broken
-        self.offset=np.array([50,0,0])
-        self.range=np.array([50,128,128])
+        self.offset=-np.array([0,128,128])
+        self.range=np.array([100,255,255])
     def __len__(self):
         return len(self.file_list)
     
