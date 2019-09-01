@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 
 class critic(nn.Module):
-    def __init__(self,im_size):
+    def __init__(self,im_size,classes=3):
         super(critic,self).__init__()
 
-        self.cnn=nn.Sequential(convBlock(3,16),
+        self.cnn=nn.Sequential(convBlock(classes,16),
                                convBlock(16,32),
                                convBlock(32,64),
                                convBlock(64,128))

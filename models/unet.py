@@ -1,13 +1,14 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from settings import s
+#from settings import s
 
 
 class unet(nn.Module):
-    def __init__(self, bn=True, drop_rate=0):
+    def __init__(self, bn=True, drop_rate=0, classes=3):
         '''
         '''
+        self.classes=classes
         super(unet,self).__init__()
         #first layer without pooling
         self.input = double_conv(1,64, bn)
@@ -22,7 +23,7 @@ class unet(nn.Module):
         self.expanse3 = up_conv(256, bn, drop_rate)
         self.expanse4 = up_conv(128, bn, drop_rate)
         #out convolution
-        self.out_conv = nn.Conv2d(64,s.classes,1)
+        self.out_conv = nn.Conv2d(64,classes,1)
 
         # initializing weights:
         for m in self.modules():
@@ -55,7 +56,10 @@ class unet(nn.Module):
         x = self.expanse3(x2,x)
         x = self.expanse4(x1,x)
         x = self.out_conv(x)
-        return torch.sigmoid(x)
+        if self.classes==3:
+            return torch.sigmoid(x)
+        if self.classes==2: #lab
+            return torch.tanh(x)
 
 
 # contraction: building block of the left side of a unet

@@ -6,7 +6,7 @@ import models.resnet as resnet
 class model(nn.Module):
     def __init__(self,block=resnet.BasicBlock, layers=[3, 4, 6, 3], num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
-                 norm_layer=None):
+                 norm_layer=None,col_channels=3):
         
         super(model,self).__init__()
         #using first half of the resnet
@@ -44,9 +44,9 @@ class model(nn.Module):
         self.up2 = up_conv(256,128)
         self.up3 = up_conv(128,64)
         self.up4 = up_conv(64,64)
-        self.up5 = up_conv(64,3,after_skip=4)
+        self.up5 = up_conv(64,col_channels,after_skip=4)
         #rgb output
-        self.out_conv = nn.Conv2d(3,3,1)
+        self.out_conv = nn.Conv2d(col_channels,col_channels,1)
         self.tanh=nn.Tanh()
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

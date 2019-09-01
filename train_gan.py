@@ -15,6 +15,7 @@ import torchvision.datasets as datasets
 from torch.utils.data import dataloader
 import json
 from functions import load_trainset
+from skimage import color
 
 def main(argv):
     # setting argument defaults
@@ -24,18 +25,19 @@ def main(argv):
     weights_name=s.weights_name
     lr=s.learning_rate
     save_freq = s.save_freq
-    mode=0
+    mode=1
     image_loss_weight=s.image_loss_weight
     epochs = s.epochs
     beta1,beta2=s.betas
     infinite_loop=s.infinite_loop
     data_path = s.data_path
     drop_rate = s.drop_rate
+    lab = s.lab
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
-        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:p:d:",
+        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:p:d:i:",
             ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=','data_path=','drop_rate='
-            'beta1=','beta2='])
+            'beta1=','beta2=','lab','image-loss-weight='])
     except getopt.GetoptError:
         print(help)
         sys.exit(2)
@@ -71,13 +73,19 @@ def main(argv):
             beta1 = float(arg)
         elif opt=='--beta2':
             beta2 = float(arg)
+        elif opt=='--lab':
+            lab=True
+        elif opt in ('-i','--image-loss-weight'):
+            image_loss_weight=float(arg)
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+    dataset=None
     if data_path == './cifar-10':
         in_size = 32
+        dataset = 0
     elif 'places' in data_path:
         in_size = 256
+        dataset = 1
     in_shape=(3,in_size,in_size)
 
     #out_shape=(s.classes,32,32)
@@ -86,16 +94,17 @@ def main(argv):
 
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
 
-    trainset = load_trainset(data_path)
+    trainset = load_trainset(data_path,lab=lab)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
                                         shuffle=True, num_workers=2)
  
     print("NETWORK PATH:", weight_path_ending)
-    
+    #define output channels of the model
+    classes=2 if lab else 3
     #define model
     UNet=None
     try:
-        UNet=model() if mode==0 else unet(drop_rate=drop_rate)
+        UNet=model(col_channels=classes) if mode==0 else unet(drop_rate=drop_rate,classes=classes)
         #load weights
         try:
             UNet.load_state_dict(torch.load(weight_path_ending))
@@ -105,7 +114,7 @@ def main(argv):
             #sys.exit(2)
     except RuntimeError:
         #if the wrong mode was chosen: try the other one
-        UNet=model() if mode==1 else unet()
+        UNet=model(col_channels=classes) if mode==1 else unet(classes=classes)
         #load weights
         try:
             UNet.load_state_dict(torch.load(weight_path_ending))
@@ -135,6 +144,7 @@ def main(argv):
             "epochs": 0,
             "batch_size": mbsize,
             "lr": lr,
+            "lab":lab,
             "betas": betas,
             "image_loss_weight": image_loss_weight,
             "model":['custom','unet'][mode]
@@ -145,6 +155,7 @@ def main(argv):
         mbsize=params['batch_size']
         betas=params['betas']
         lr=params['lr']
+        lab=params['lab']
         image_loss_weight=params['image_loss_weight']
         loss_path_ending=params['loss_name']
         #memorize how many epochs already were trained if we continue training
@@ -152,12 +163,12 @@ def main(argv):
 
     
     #define critic 
-    if data_path == './cifar-10':
-        crit=critic(trainset.data.shape[1]).to(device)
-    elif 'places' in data_path:
-        crit=critic(256).to(device)
+    if dataset == 0: #cifar 10
+        crit=critic(trainset.data.shape[1],classes=classes).to(device)
+    elif dataset == 1: #places
+        crit=critic(256,classes=classes).to(device)
     #load discriminator weights
-    crit_path=weight_path+'/'+weights_name+'_crit.pth'
+    crit_path=os.path.join(weight_path,weights_name+'_crit.pth')
     try:
         crit.load_state_dict(torch.load(crit_path))
         print('Loaded weights for discriminator from %s'%crit_path)
@@ -176,28 +187,34 @@ def main(argv):
 
     UNet.train()
     crit.train()
-    #convert to black and white image using following weights
     gray = torch.tensor([0.2989 ,0.5870, 0.1140 ])[:,None,None].float()
     ones = torch.ones(mbsize,device=device)
     zeros= torch.zeros(mbsize,device=device)
     # run over epochs
     for e in (range(prev_epochs, prev_epochs + epochs) if not infinite_loop else count(prev_epochs)):
         g_running,c_running=0,0
-        #load batches
-        #if data_path == './cifar-10':           
+        #load batches          
         for i,batch in enumerate(trainloader):
-            if data_path == './cifar-10':
+            if dataset == 0: #cifar 10
                 (image,_) = batch
-            elif 'places' in data_path:
+            elif dataset == 1: #places
                 image = batch
+                
             batch_size=image.shape[0]
-            #create ones and zeros tensors
-            
-            #convert to grayscale image
-            
-            #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
-            X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
-            image=image.float().to(device)
+            X=None
+            #differentiate between the two available color spaces RGB and Lab
+            if lab:
+                if dataset == 0: #cifar 10
+                    image=np.transpose(image,(0,3,2,1))
+                    image=np.transpose(color.rgb2lab(image),(0,3,2,1))
+                    image=torch.from_numpy((image-np.array([50,0,0])[None,:,None,None])/np.array([50,128,128])[None,:,None,None]).float()
+                X=torch.unsqueeze(image[:,0,:,:],1).to(device) #set X to the Lightness of the image
+                image=image[:,1:,:,:].to(device) #image is a and b channel
+            else:
+                #convert to grayscale image
+                #using the matlab formula: 0.2989 * R + 0.5870 * G + 0.1140 * B and load data to gpu
+                X=(image.clone()*gray).sum(1).to(device).view(-1,1,*in_shape[1:])
+                image=image.float().to(device)
             #----------------------------------------------------------------------------------------
             ################################### Unet optimization ###################################
             #----------------------------------------------------------------------------------------
@@ -205,6 +222,7 @@ def main(argv):
             optimizer_g.zero_grad()
             #generate colorized version with unet
             unet_col=None
+            #print(X.shape,image.shape,classes)
             if mode==0:
                 unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
             else:
