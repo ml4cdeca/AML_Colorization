@@ -5,15 +5,16 @@ import numpy as np
 from settings import s
 #from unet.unet import unet
 from skimage.color import lab2rgb as lr
+from skimage import exposure
 
 #not really beautiful 
 def show_colorization(pred,truth=None,original=None,lab=False):
     N = 1
     if len(pred.shape)==4:
          N = pred.shape[0]
-    M = 1+(1 if not truth is None else 0)+(1 if not original is None else 0)
+    M = 1+(1 if not truth is None else 0)+(1 if not original is None else 0)+(2 if lab else 0)
     plt.figure(figsize=(5, N*5/M))
-    counter=np.arange(1,1+N*M).reshape(M,N)
+    counter=np.arange(1,1+N*M).reshape(N,M)
     if lab:
         for i in range(N):
             if truth is not None and original is not None:
@@ -24,21 +25,32 @@ def show_colorization(pred,truth=None,original=None,lab=False):
                 #for arr in (lab_orig[0,...],lab_orig[1,...],truth[i].detach().cpu().numpy()[0,...],truth[i].detach().cpu().numpy()[1,...],
                 #            lab_pred[0,...],lab_pred[1,...],pred[i].detach().cpu().numpy()[0,...],pred[i].detach().cpu().numpy()[1,...]):
                 #    print(arr.min(),arr.max())
-                plt.subplot(N,3,counter[i,0])
+                plt.subplot(N,M,counter[i,0])
                 if i==0:
-                    plt.title('Input image')
+                    plt.title('Input image ($L$-channel)')
                 plt.axis('off')
                 plt.imshow(gray[0],cmap='gray')
-                plt.subplot(N,3,counter[i,1])
+                plt.subplot(N,M,counter[i,1])
                 if i==0:
                     plt.title('Ground truth')
                 plt.axis('off')
                 plt.imshow(lr(np.transpose(lab_orig,(1,2,0))))
-                plt.subplot(N,3,counter[i,2])
+                plt.subplot(N,M,counter[i,3])
                 if i==0:
-                    plt.title('colorization')
+                    plt.title('Colorization')
                 plt.imshow(lr(np.transpose(lab_pred,(1,2,0))))
                 plt.axis('off')
+                plt.subplot(N,M,counter[i,2])
+                if i==0:
+                    plt.title('Ground truth $ab$-channels')
+                plt.axis('off')
+                plt.imshow(exposure.adjust_gamma(lr(np.transpose(np.concatenate((100*np.ones(gray.shape),-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*truth[i].detach().cpu().numpy())),(1,2,0))),3,.9))
+                plt.subplot(N,M,counter[i,4])
+                if i==0:
+                    plt.title('Colorization $ab$-channels')
+                plt.imshow(exposure.adjust_gamma(lr(np.transpose(np.concatenate((100*np.ones(gray.shape),-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pred[i].detach().cpu().numpy())),(1,2,0))),3,.9))
+                plt.axis('off')
+
     else:
         for i in range(N):
             if truth is None and original is None:
