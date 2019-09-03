@@ -2,6 +2,7 @@ import torch
 import os
 from models.unet import unet
 from models.model import model
+from models.endecoder import generator
 from torchvision import transforms
 from settings import s
 import torchvision.datasets as datasets
@@ -37,9 +38,13 @@ def main(argv):
             data_path = arg
         elif opt in ("--batchnorm", "-b"):
             batch_norm = arg in ["True", "true", "1"]
-        elif opt in ('-m','--model'):
-            if arg in ('u'):
-                mode=1
+        elif opt=='-m':
+            if arg in ('custom','0'):
+                mode = 0
+            elif arg in ('u','1','unet'):
+                mode = 1
+            elif arg in ('ende','2'):
+                mode = 2
         elif opt in ('-l','--lab'):
             lab=True
         elif opt in ("-d", "--drop-rate"):
@@ -65,7 +70,12 @@ def main(argv):
     #define model
     UNet=None
     try:
-        UNet=model(col_channels=classes) if mode==0 else unet(drop_rate=drop_rate,classes=classes)
+        if mode ==0:
+            UNet=model(col_channels=classes) 
+        elif mode ==1:
+            UNet=unet(drop_rate=drop_rate,classes=classes)
+        elif mode ==2:
+            UNet=generator(drop_rate,classes)
         #load weights
         try:
             UNet.load_state_dict(torch.load(weight_path))
@@ -116,6 +126,8 @@ def main(argv):
                 unet_col=UNet(X)
             except:
                 unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
+            #for arr in (unet_col[0,...],unet_col[1,...]):
+            #    print(arr.min().item(),arr.max().item())        
             show_colorization(unet_col,image,X,lab=lab)
 if __name__ == '__main__':
     main(sys.argv[1:])

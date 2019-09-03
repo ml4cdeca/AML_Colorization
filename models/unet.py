@@ -102,16 +102,16 @@ class double_conv_pool(nn.Module):
 
 # double convolution without pooling layer
 class double_conv(nn.Module):
-    def __init__(self, in_channels, out_channels, bn, drop_rate=0):
+    def __init__(self, in_channels, out_channels, bn, drop_rate=0,leaky=None):
         super(double_conv,self).__init__()
         if bn:
             self.layer_list = [
                 nn.Conv2d(in_channels,out_channels,3,padding=1),
                 nn.BatchNorm2d(out_channels),
-                nn.ReLU(inplace=True),
+                nn.ReLU(inplace=True) if leaky is None else nn.LeakyReLU(leaky,True),
                 nn.Conv2d(out_channels,out_channels,3,padding=1),
                 nn.BatchNorm2d(out_channels),
-                nn.ReLU(inplace=True)
+                nn.ReLU(inplace=True) if leaky is None else nn.LeakyReLU(leaky,True)
             ]
             if drop_rate > 0:
                 self.layer_list = self.layer_list[:3] + [nn.Dropout2d(drop_rate)] + self.layer_list[3:] + [nn.Dropout2d(drop_rate)]
@@ -119,12 +119,12 @@ class double_conv(nn.Module):
         else:
             self.layer_list = [
                 nn.Conv2d(in_channels, out_channels, 3, padding=1),
-                nn.ReLU(inplace=True),
+                nn.ReLU(inplace=True) if leaky is None else nn.LeakyReLU(leaky,True),
                 nn.Conv2d(out_channels, out_channels, 3, padding=1),
-                nn.ReLU(inplace=True)
+                nn.ReLU(inplace=True) if leaky is None else nn.LeakyReLU(leaky,True)
             ]
             if drop_rate > 0:
-                self.layer_list = self.layer_list.append(nn.Dropout2d(drop_rate))
+                self.layer_list.append(nn.Dropout2d(drop_rate))
 
         self.double_conv = nn.Sequential(*self.layer_list)
 

@@ -8,6 +8,7 @@ import sys, getopt
 from models.discriminator import critic
 from models.model import model
 from models.unet import unet
+from models.endecoder import generator
 from settings import s
 import time
 import torchvision.transforms as transforms
@@ -64,7 +65,12 @@ def main(argv):
         elif opt in ("-l", "--lr"):
             lr = float(arg)
         elif opt=='-m':
-            mode = arg in ('u','1','unet')
+            if arg in ('custom','0'):
+                mode = 0
+            elif arg in ('u','1','unet'):
+                mode = 1
+            elif arg in ('ende','2'):
+                mode = 2
         elif opt in ("-p", "--data_path"):
             data_path = str(arg)
         elif opt in ("-d", "--drop_rate"):
@@ -104,7 +110,12 @@ def main(argv):
     #define model
     UNet=None
     try:
-        UNet=model(col_channels=classes) if mode==0 else unet(drop_rate=drop_rate,classes=classes)
+        if mode ==0:
+            UNet=model(col_channels=classes) 
+        elif mode ==1:
+            UNet=unet(drop_rate=drop_rate,classes=classes)
+        elif mode ==2:
+            UNet=generator(drop_rate,classes)
         #load weights
         try:
             UNet.load_state_dict(torch.load(weight_path_ending))
@@ -147,7 +158,7 @@ def main(argv):
             "lab":lab,
             "betas": betas,
             "image_loss_weight": image_loss_weight,
-            "model":['custom','unet'][mode]
+            "model":['custom','unet','encoder-decoder'][mode]
         }
     else:
         #load specified parameters from model_dict
