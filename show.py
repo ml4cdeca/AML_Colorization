@@ -7,8 +7,11 @@ from settings import s
 from skimage.color import lab2rgb as lr
 from skimage import exposure
 
+from functions import bins2lab
+from scipy.ndimage.interpolation import zoom
+
 #not really beautiful 
-def show_colorization(pred,truth=None,original=None,lab=False):
+def show_colorization(pred,truth=None,original=None,lab=False,cl=False):
     N = 1
     if len(pred.shape)==4:
          N = pred.shape[0]
@@ -19,9 +22,16 @@ def show_colorization(pred,truth=None,original=None,lab=False):
         for i in range(N):
             if truth is not None and original is not None:
                 gray=original[i].detach().cpu().numpy()
+                pn=pred[i].detach().cpu().numpy()
+                tn=truth[i].detach().cpu().numpy()                
+                if cl:
+                    #print(pn.shape)
+                    pn=bins2lab(pn.argmax(0)).transpose((2,1,0))
+                    #print(pn.shape)
+                    pn=zoom(pn,(1,4,4))
                 #print(truth[i].detach().cpu().numpy().min(),truth[i].detach().cpu().numpy().max())
-                lab_pred=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pred[i].detach().cpu().numpy()))
-                lab_orig=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*truth[i].detach().cpu().numpy()))
+                lab_pred=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pn))
+                lab_orig=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*tn))
                 #for arr in (lab_orig[0,...],lab_orig[1,...],truth[i].detach().cpu().numpy()[0,...],truth[i].detach().cpu().numpy()[1,...],
                 #            lab_pred[0,...],lab_pred[1,...],pred[i].detach().cpu().numpy()[0,...],pred[i].detach().cpu().numpy()[1,...]):
                 #    print(arr.min(),arr.max())
@@ -44,11 +54,11 @@ def show_colorization(pred,truth=None,original=None,lab=False):
                 if i==0:
                     plt.title('Ground truth $ab$-channels')
                 plt.axis('off')
-                plt.imshow(exposure.adjust_gamma(lr(np.transpose(np.concatenate((100*np.ones(gray.shape),-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*truth[i].detach().cpu().numpy())),(1,2,0))),3,.9))
+                plt.imshow(exposure.adjust_gamma(lr(np.transpose(np.concatenate((100*np.ones(gray.shape),-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*tn)),(1,2,0))),3,.9))
                 plt.subplot(N,M,counter[i,4])
                 if i==0:
                     plt.title('Colorization $ab$-channels')
-                plt.imshow(exposure.adjust_gamma(lr(np.transpose(np.concatenate((100*np.ones(gray.shape),-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pred[i].detach().cpu().numpy())),(1,2,0))),3,.9))
+                plt.imshow(exposure.adjust_gamma(lr(np.transpose(np.concatenate((100*np.ones(gray.shape),-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pn)),(1,2,0))),3,.9))
                 plt.axis('off')
 
     else:

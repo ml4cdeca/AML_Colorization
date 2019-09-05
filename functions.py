@@ -48,26 +48,42 @@ class PlacesDataset(Dataset):
 #distance matrix
 def dist_mat(X,Y):
     return -2 * X@Y.T + np.sum(Y**2, axis=1) + np.sum(X**2, axis=1)[:, None]
-   
+def torch_dist_mat(X,Y):
+    #print(X.shape,Y.shape,torch.matmul(X, torch.transpose(Y,1,2).double()).shape)
+    return -2 * torch.matmul(X, torch.transpose(Y,1,2).double()) + torch.sum(Y**2,dim=2).double()[:,None] +torch.unsqueeze(torch.sum(X**2, dim=2),2)  
 bins=np.load('resources/norm_bins.npy')
+tbins=torch.from_numpy(bins).to('cuda' if torch.cuda.is_available() else 'cpu')
 def ab2bins(image):
     #takes image with only ab channels and returns the 
     shape=image.shape
+    im_size=shape[2 if len(shape)==4 else 1]
     mbsize = shape[0] if len(shape)==4 else 1
-    bin_rep = dist_mat(bins,image.reshape(-1,2)).argmin(0).reshape(mbsize,shape[2 if len(shape)==4 else 1],-1,1)
-    if len(shape)==4:
-        return bin_rep
+    if type(image)==torch.Tensor:
+        bin_rep = torch_dist_mat(tbins,image.reshape(mbsize,-1,2)).argmin(1).reshape(mbsize,1,im_size,-1)
+        if len(shape)==4:
+            return bin_rep
+        else:
+            return bin_rep[0]
     else:
-        return bin_rep[0]
+        image=np.array(image)
+        bin_rep = dist_mat(bins,image.reshape(-1,2)).argmin(0).reshape(mbsize,im_size,-1,1)
+        if len(shape)==4:
+            return bin_rep
+        else:
+            return bin_rep[0]
         
+    
+
+
 def bins2lab(bin_rep,L=None):
     #takes bins representation of an image and returns rgb if Lightness is provided. Else only ab channel
-    mbsize=1 if len(bin_rep.shape)==3 else bin_rep.shape[0]
+    mbsize=1 if len(bin_rep.shape)<=3 else bin_rep.shape[0]
     size=bin_rep.shape[2] if len(bin_rep.shape)==4 else bin_rep.shape[1]
-    ab=bins[bin_rep.flatten()].reshape(mbsize,size,-1,2)
+    #print(bin_rep.shape,bins[:3],mbsize,size)
+    ab=bins[0][bin_rep.flatten()].reshape(mbsize,size,-1,2)
     if not L is None:
         ab=np.concatenate((L.reshape(mbsize,size,-1,1),ab),3)
     
-    if len(bin_rep.shape)==3:
+    if len(bin_rep.shape)<=3:
         ab=ab[0]
     return ab

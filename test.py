@@ -3,6 +3,7 @@ import os
 from models.unet import unet
 from models.model import model
 from models.endecoder import generator
+from models.richzhang import richzhang
 from torchvision import transforms
 from settings import s
 import torchvision.datasets as datasets
@@ -21,8 +22,9 @@ def main(argv):
     mode=1
     drop_rate=s.drop_rate
     lab=s.lab
+    classification=False
     try:
-        opts, args = getopt.getopt(argv,"h:w:p:b:m:ld:",["help", "weight-path=", "datapath=",'model=','lab','drop-rate='])
+        opts, args = getopt.getopt(argv,"h:w:p:b:m:ld:c",["help", "weight-path=", "datapath=",'model=','lab','drop-rate='])
     except getopt.GetoptError as error:
         print(error)
         print( 'test.py -i <Boolean> -s <Boolean>')
@@ -49,7 +51,9 @@ def main(argv):
             lab=True
         elif opt in ("-d", "--drop-rate"):
             drop_rate = float(arg) 
-
+        elif opt =='-c':
+            classification=True
+            lab=True
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     dataset=None
@@ -70,12 +74,16 @@ def main(argv):
     #define model
     UNet=None
     try:
-        if mode ==0:
-            UNet=model(col_channels=classes) 
-        elif mode ==1:
-            UNet=unet(drop_rate=drop_rate,classes=classes)
-        elif mode ==2:
-            UNet=generator(drop_rate,classes)
+        if classification:
+            UNet=richzhang(drop_rate)
+        else:
+            if mode ==0:
+                UNet=model(col_channels=classes) 
+            elif mode ==1:
+                UNet=unet(drop_rate=drop_rate,classes=classes)
+            elif mode ==2:
+                UNet=generator(drop_rate,classes)
+        
         #load weights
         try:
             UNet.load_state_dict(torch.load(weight_path))
@@ -128,6 +136,6 @@ def main(argv):
                 unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
             #for arr in (unet_col[0,...],unet_col[1,...]):
             #    print(arr.min().item(),arr.max().item())        
-            show_colorization(unet_col,image,X,lab=lab)
+            show_colorization(unet_col,image,X,lab=lab,cl=classification)
 if __name__ == '__main__':
     main(sys.argv[1:])
