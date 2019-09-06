@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from richzhang import conv_block
 
 class critic(nn.Module):
     def __init__(self,im_size,classes=3):
@@ -23,7 +24,7 @@ class gray_critic(nn.Module):
     def __init__(self,im_size):
         super(gray_critic,self).__init__()
 
-        self.cnn=nn.Sequential(convBlock(4,16),
+        self.cnn=nn.Sequential(conv_Block(4,16),
                                convBlock(16,32),
                                convBlock(32,64),
                                convBlock(64,128))
@@ -47,15 +48,15 @@ class markov_critic(nn.Module):
     def __init__(self):
         super(markov_critic,self).__init__()
 
-        self.cnn = nn.Sequential(convBlock(4,16,kernel_size=2),
-                                convBlock(16,32,kernel_size=2),
-                                convBlock(32,64,kernel_size=2),
-                                convBlock(64,1,kernel_size=1))
-        self.sig=nn.Sigmoid()
-
+        self.cnn = nn.Sequential(conv_block(4, 64, pad=1, kernel=4, stride=2, leaky=.2),
+                                conv_block(64, 128, pad=1, kernel=4, stride=2, leaky=.2, bn=True),
+                                conv_block(128, 256, pad=1, kernel=4, stride=2, leaky=.2, bn=True),
+                                conv_block(256, 512, pad=1, kernel=4, stride=1, leaky=.2, bn=True),
+                                nn.Conv2d(512, 1, kernel_size=4, stride=1, padding=1),
+                                nn.Sigmoid())
     def forward(self, x):
-        x = self.cnn(x)
-        return self.sig(x)
+        return self.cnn(x)
+        
 
 class convBlock(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size=3,stride=2,padding=1):
