@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from richzhang import conv_block
+from models.richzhang import conv_block
 
 class critic(nn.Module):
     def __init__(self,im_size,classes=3):
