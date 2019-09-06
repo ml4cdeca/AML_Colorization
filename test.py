@@ -86,7 +86,7 @@ def main(argv):
         
         #load weights
         try:
-            UNet.load_state_dict(torch.load(weight_path))
+            UNet.load_state_dict(torch.load(weight_path, map_location=device))
             print("Loaded network weights from", weight_path)
         except FileNotFoundError:
             print("Did not find weight files.")
@@ -96,7 +96,7 @@ def main(argv):
         UNet=model(col_channels=classes) if mode==1 else unet(classes=classes)
         #load weights
         try:
-            UNet.load_state_dict(torch.load(weight_path))
+            UNet.load_state_dict(torch.load(weight_path, map_location=device))
             print("Loaded network weights from", weight_path)
             #change mode to the correct one
             mode = (mode +1) %2
