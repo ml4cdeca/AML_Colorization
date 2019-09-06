@@ -168,9 +168,7 @@ def main(argv):
         crit.apply(weights_init_normal)'''
     #optimizer
     optimizer=optim.Adam(classifier.parameters(),lr=lr,betas=betas)
-    weights=None
-    if weighted_loss:
-        weights=np.load('resources/hist_val.npy')
+    weights=np.load('resources/class-weights.npy')
     criterion = nn.CrossEntropyLoss(weight=weights).to(device) if weighted_loss else nn.CrossEntropyLoss().to(device)
     #additional gan loss: l1 loss
     l1loss = nn.L1Loss().to(device)
