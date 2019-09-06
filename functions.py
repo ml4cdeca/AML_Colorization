@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
 import os
 import torchvision.datasets as datasets
 from torchvision import transforms, utils
@@ -87,3 +88,22 @@ def bins2lab(bin_rep,L=None):
     if len(bin_rep.shape)<=3:
         ab=ab[0]
     return ab
+
+class softCossEntropyLoss(nn.Module):
+    def __init__(self,weights=None,device=torch.device('cpu')):
+        '''
+        weights shape: (Q,)
+        '''
+        super(softCossEntropyLoss,self).__init__()
+        self.weights=(torch.Tensor(weights,device=device) if type(weights)==np.ndarray else weights.to(device)) if not weights is None else None
+        
+    def forward(self,output,labels):
+        '''
+        output shape: (batch_size,channels,dim1,dim2)
+        labels shape: (batch_size,channels,dim1,dim2) <-- from one hot encoded gaussian filtered 
+        returns multinomial cross entropy loss
+        '''
+        if self.weights is None:
+            return -torch.sum(torch.sum(labels*torch.log(output),1),(1,2))        
+        else:
+            return -torch.sum((self.weights[None,:,None,None]*labels).sum(1)*torch.sum(labels*torch.log(output),1),(1,2))
