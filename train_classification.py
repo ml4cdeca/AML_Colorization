@@ -7,6 +7,7 @@ from itertools import count
 import sys, getopt
 from models.discriminator import critic
 from models.richzhang import richzhang as generator
+from models.unet import unet
 from settings import s
 import time
 import torchvision.transforms as transforms
@@ -15,6 +16,7 @@ from torch.utils.data import dataloader
 import json
 from functions import load_trainset
 from functions import ab2bins
+from functions import softCossEntropyLoss
 from skimage import color
 from scipy.ndimage.interpolation import zoom
 
@@ -37,9 +39,9 @@ def main(argv):
     weighted_loss=False
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
-        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:p:d:i:",
+        opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:p:d:i:m:",
             ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','data_path=','drop_rate='
-            'beta1=','beta2=','lab','image-loss-weight=','weighted'])
+            'beta1=','beta2=','lab','image-loss-weight=','weighted','mode='])
     except getopt.GetoptError:
         print(help)
         sys.exit(2)
@@ -69,6 +71,11 @@ def main(argv):
             data_path = str(arg)
         elif opt in ("-d", "--drop_rate"):
             drop_rate = float(arg)
+        elif opt=='-m':
+            if arg in ('richzhang','0','ende'):
+                mode = 0
+            elif arg in ('u','1','unet'):
+                mode = 1
         elif opt=='--beta1':
             beta1 = float(arg)
         elif opt=='--beta2':
@@ -102,9 +109,9 @@ def main(argv):
  
     print("NETWORK PATH:", weight_path_ending)
     #define output channels of the model
-    classes=2
+    classes=274
     #define model
-    classifier=generator(drop_rate)
+    classifier=generator(drop_rate) if mode==0 else unet(True,drop_rate,classes)
     #load weights
     try:
         classifier.load_state_dict(torch.load(weight_path_ending))
@@ -137,7 +144,7 @@ def main(argv):
             "betas": betas,
             "image_loss_weight": image_loss_weight,
             "weighted_loss":weighted_loss,
-            "model":'classification'
+            "model":'classification '+['richzhang','U-Net'][mode]
         }
     else:
         #load specified parameters from model_dict
@@ -169,11 +176,12 @@ def main(argv):
     #optimizer
     optimizer=optim.Adam(classifier.parameters(),lr=lr,betas=betas)
     weights=np.load('resources/class-weights.npy')
-    criterion = nn.CrossEntropyLoss(weight=weights).to(device) if weighted_loss else nn.CrossEntropyLoss().to(device)
+    #criterion = nn.CrossEntropyLoss(weight=1/weights).to(device) if weighted_loss else nn.CrossEntropyLoss().to(device)
+    criterion = softCossEntropyLoss(weights=1/weights,device=device)
     #additional gan loss: l1 loss
-    l1loss = nn.L1Loss().to(device)
+    #l1loss = nn.L1Loss().to(device)
     loss_hist=[]
-
+    soft_onehot = torch.load('resources/smooth_onehot.pt',map_location=device)
     
 
     classifier.train()
@@ -202,18 +210,20 @@ def main(argv):
             #clear gradients
             optimizer.zero_grad()
             #softmax activated distribution
-            model_out=classifier(X)
+            model_out=classifier(X).double()
             #create bin coded verion of ab ground truth
-            binab=torch.squeeze(ab2bins(image),1)
-            binab=torch.from_numpy(zoom(binab.cpu(),(1,.25,.25),order=0)).long().to(device)
+            binab=torch.squeeze(ab2bins(image),1)#.long()
+            if mode==0:
+                binab=zoom(binab.cpu(),(1,.25,.25),order=0)
+                binab=torch.from_numpy(binab).long().to(device)
+            #lookup table for soft encoded one hot vectors
+            binab=soft_onehot[:,binab].transpose(0,1).double()
             #calculate loss 
             #print(model_out.shape,binab.shape)
-            loss=criterion(model_out,binab)
+            loss=criterion(model_out,binab).mean(0)
             
             loss.backward()
             optimizer.step()
-
-           
 
             g_running+=loss.item()
             loss_hist.append([e,loss.item()])

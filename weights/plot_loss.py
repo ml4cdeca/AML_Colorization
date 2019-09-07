@@ -17,9 +17,9 @@ def main(argv):
             showCritic=True
     loss=None
     try:
-        e,i,loss=np.loadtxt(path,unpack=True)
+        e,loss=np.loadtxt(path,unpack=True)
     except OSError:
-        e,i,loss=np.loadtxt('weights/'+path,unpack=True)
+        e,loss=np.loadtxt('weights/'+path,unpack=True)
     except ValueError:
         try:
             e,i,loss,loss_d=np.loadtxt(path,unpack=True)

@@ -47,6 +47,8 @@ def main(argv):
                 mode = 1
             elif arg in ('ende','2'):
                 mode = 2
+            elif arg in ('richzhang','classende','3'):
+                mode = 3
         elif opt in ('-l','--lab'):
             lab=True
         elif opt in ("-d", "--drop-rate"):
@@ -70,39 +72,27 @@ def main(argv):
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=3,
                                         shuffle=True, num_workers=2)
     print("Loaded dataset from", data_path)
-    classes=2 if lab else 3
+    classes=(274 if classification else 2) if lab else 3
+
     #define model
     UNet=None
+
+    if mode == 0:
+        UNet=model(col_channels=classes) 
+    elif mode ==1:
+        UNet=unet(drop_rate=drop_rate,classes=classes)
+    elif mode ==2:
+        UNet=generator(drop_rate,classes)
+    elif mode == 3:
+        UNet=richzhang(drop_rate)
+    #load weights
     try:
-        if classification:
-            UNet=richzhang(drop_rate)
-        else:
-            if mode ==0:
-                UNet=model(col_channels=classes) 
-            elif mode ==1:
-                UNet=unet(drop_rate=drop_rate,classes=classes)
-            elif mode ==2:
-                UNet=generator(drop_rate,classes)
-        
-        #load weights
-        try:
-            UNet.load_state_dict(torch.load(weight_path, map_location=device))
-            print("Loaded network weights from", weight_path)
-        except FileNotFoundError:
-            print("Did not find weight files.")
-            #sys.exit(2)
-    except RuntimeError:
-        #if the wrong mode was chosen: try the other one
-        UNet=model(col_channels=classes) if mode==1 else unet(classes=classes)
-        #load weights
-        try:
-            UNet.load_state_dict(torch.load(weight_path, map_location=device))
-            print("Loaded network weights from", weight_path)
-            #change mode to the correct one
-            mode = (mode +1) %2
-        except FileNotFoundError:
-            print("Did not find weight files.")
-            #sys.exit(2)    
+        UNet.load_state_dict(torch.load(weight_path, map_location=device))
+        print("Loaded network weights from", weight_path)
+    except FileNotFoundError:
+        print("Did not find weight files.")
+        #sys.exit(2)
+    
     UNet.to(device)  
     UNet.eval()
     gray = torch.tensor([0.2989 ,0.5870, 0.1140])[:,None,None].float()
@@ -136,6 +126,6 @@ def main(argv):
                 unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
             #for arr in (unet_col[0,...],unet_col[1,...]):
             #    print(arr.min().item(),arr.max().item())        
-            show_colorization(unet_col,image,X,lab=lab,cl=classification)
+            show_colorization(unet_col,image,X,lab=lab,cl=classification,zoom=False)
 if __name__ == '__main__':
     main(sys.argv[1:])

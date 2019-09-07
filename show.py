@@ -11,7 +11,7 @@ from functions import bins2lab
 from scipy.ndimage.interpolation import zoom
 
 #not really beautiful 
-def show_colorization(pred,truth=None,original=None,lab=False,cl=False):
+def show_colorization(pred,truth=None,original=None,lab=False,cl=False,zoom=False):
     N = 1
     if len(pred.shape)==4:
          N = pred.shape[0]
@@ -25,10 +25,11 @@ def show_colorization(pred,truth=None,original=None,lab=False,cl=False):
                 pn=pred[i].detach().cpu().numpy()
                 tn=truth[i].detach().cpu().numpy()                
                 if cl:
-                    #print(pn.shape)
+                    #print(np.bincount(pn.argmax(0).flatten().astype(int)).argmax())
                     pn=bins2lab(pn.argmax(0)).transpose((2,1,0))
                     #print(pn.shape)
-                    pn=zoom(pn,(1,4,4))
+                    if zoom:
+                        pn=zoom(pn,(1,4,4))
                 #print(truth[i].detach().cpu().numpy().min(),truth[i].detach().cpu().numpy().max())
                 lab_pred=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pn))
                 lab_orig=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*tn))
