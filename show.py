@@ -29,7 +29,12 @@ def show_colorization(pred,truth=None,original=None,lab=False,cl=False,zoom=Fals
                     pn=bins2lab(pn.argmax(0)).transpose((2,1,0))
                     #print(pn.shape)
                     if zoom:
+                        #print(pn.shape)
+                        #pn=np.fliplr(np.rot90(pn,-1))
                         pn=zoom(pn,(1,4,4))
+                    else:
+                        #print(pn.shape)
+                        pn=np.flip(np.flip((np.rot90(pn,-1,(1,2))),(0,2)),0)
                 #print(truth[i].detach().cpu().numpy().min(),truth[i].detach().cpu().numpy().max())
                 lab_pred=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*pn))
                 lab_orig=np.concatenate((100*gray,-np.array([128,128])[:,None,None]+np.array([255,255])[:,None,None]*tn))
