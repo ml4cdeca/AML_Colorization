@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import os
 import numpy as np
@@ -177,7 +178,7 @@ def main(argv):
     optimizer=optim.Adam(classifier.parameters(),lr=lr,betas=betas)
     weights=np.load('resources/class-weights.npy')
     #criterion = nn.CrossEntropyLoss(weight=1/weights).to(device) if weighted_loss else nn.CrossEntropyLoss().to(device)
-    criterion = softCossEntropyLoss(weights=1/weights,device=device)
+    criterion = softCossEntropyLoss(weights=weights,device=device)
     #additional gan loss: l1 loss
     #l1loss = nn.L1Loss().to(device)
     loss_hist=[]
@@ -212,10 +213,13 @@ def main(argv):
             #softmax activated distribution
             model_out=classifier(X).double()
             #create bin coded verion of ab ground truth
-            binab=torch.squeeze(ab2bins(image),1)#.long()
+            binab=ab2bins(image)
             if mode==0:
-                binab=zoom(binab.cpu(),(1,.25,.25),order=0)
-                binab=torch.from_numpy(binab).long().to(device)
+                #print(binab.shape)
+                binab=F.interpolate(torch.unsqueeze(binab.float(),dim=1),scale_factor=(.25,.25)).long()
+                #binab=zoom(binab.cpu(),(1,.25,.25),order=0)
+                #binab=torch.from_numpy(binab).long().to(device)
+            binab=torch.squeeze(binab,1)#.long()
             #lookup table for soft encoded one hot vectors
             binab=soft_onehot[:,binab].transpose(0,1).double()
             #calculate loss 

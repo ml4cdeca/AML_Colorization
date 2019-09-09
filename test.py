@@ -76,7 +76,7 @@ def main(argv):
 
     #define model
     UNet=None
-
+    zoom=False
     if mode == 0:
         UNet=model(col_channels=classes) 
     elif mode ==1:
@@ -85,6 +85,7 @@ def main(argv):
         UNet=generator(drop_rate,classes)
     elif mode == 3:
         UNet=richzhang(drop_rate)
+        zoom=True
     #load weights
     try:
         UNet.load_state_dict(torch.load(weight_path, map_location=device))
@@ -126,6 +127,6 @@ def main(argv):
                 unet_col=UNet(torch.stack((X,X,X),1)[:,:,0,:,:])
             #for arr in (unet_col[0,...],unet_col[1,...]):
             #    print(arr.min().item(),arr.max().item())        
-            show_colorization(unet_col,image,X,lab=lab,cl=classification,zoom=False)
+            show_colorization(unet_col,image,X,lab=lab,cl=classification,zoom=zoom)
 if __name__ == '__main__':
     main(sys.argv[1:])
