@@ -90,6 +90,7 @@ def main(argv):
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset=None
+    in_size = 256
     if data_path == './cifar-10':
         in_size = 32
         dataset = 0
