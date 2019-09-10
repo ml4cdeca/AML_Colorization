@@ -8,7 +8,7 @@ from skimage.color import lab2rgb as lr
 from skimage import exposure
 
 from functions import bins2lab
-from scipy.ndimage.interpolation import zoom
+from scipy.ndimage.interpolation import zoom as scale
 
 #not really beautiful 
 def show_colorization(pred,truth=None,original=None,lab=False,cl=False,zoom=False):
@@ -31,7 +31,7 @@ def show_colorization(pred,truth=None,original=None,lab=False,cl=False,zoom=Fals
                     if zoom:
                         #print(pn.shape)
                         #pn=np.fliplr(np.rot90(pn,-1))
-                        pn=zoom(pn,(1,4,4))
+                        pn=scale(pn,(1,4,4))
                     else:
                         #print(pn.shape)
                         pn=np.flip(np.flip((np.rot90(pn,-1,(1,2))),(0,2)),0)

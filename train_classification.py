@@ -35,7 +35,7 @@ def main(argv):
     beta1,beta2=s.betas
     infinite_loop=s.infinite_loop
     data_path = s.data_path
-    drop_rate = s.drop_rate
+    drop_rate = 0
     lab = s.lab
     weighted_loss=False
     help='test.py -b <int> -p <string> -r <int> -w <string>'
@@ -177,11 +177,12 @@ def main(argv):
     #optimizer
     optimizer=optim.Adam(classifier.parameters(),lr=lr,betas=betas)
     weights=np.load('resources/class-weights.npy')
-    #criterion = nn.CrossEntropyLoss(weight=1/weights).to(device) if weighted_loss else nn.CrossEntropyLoss().to(device)
-    criterion = softCossEntropyLoss(weights=weights,device=device)
+    #criterion = nn.CrossEntropyLoss(weight=weights).to(device) if weighted_loss else nn.CrossEntropyLoss().to(device)
+    criterion = softCossEntropyLoss(weights=weights,device=device) if weighted_loss else softCossEntropyLoss(weights=None,device=device)
     #additional gan loss: l1 loss
     #l1loss = nn.L1Loss().to(device)
     loss_hist=[]
+    #soft_onehot = torch.load('resources/onehot.pt',map_location=device)
     soft_onehot = torch.load('resources/smooth_onehot.pt',map_location=device)
     
 
