@@ -34,11 +34,12 @@ def main(argv):
     data_path = s.data_path
     drop_rate = s.drop_rate
     lab = s.lab
+    load_list = s.load_list
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
         opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:m:p:d:i:",
             ['epochs=',"mbsize=","report-freq=",'weight-path=', 'lr=','save-freq=','weight-name=','mode=','data_path=','drop_rate='
-            'beta1=','beta2=','lab','image-loss-weight='])
+            'beta1=','beta2=','lab','image-loss-weight=','load-list'])
     except getopt.GetoptError:
         print(help)
         sys.exit(2)
@@ -83,6 +84,8 @@ def main(argv):
             lab=True
         elif opt in ('-i','--image-loss-weight'):
             image_loss_weight=float(arg)
+        elif opt in ('--load-list'):
+            load_list=True
 
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset=None
@@ -100,7 +103,7 @@ def main(argv):
 
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
 
-    trainset = load_trainset(data_path,lab=lab)
+    trainset = load_trainset(data_path,lab=lab,load_list=load_list)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
                                         shuffle=True, num_workers=2)
  

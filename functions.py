@@ -8,20 +8,35 @@ from torchvision import transforms, utils
 from torch.utils.data import Dataset, DataLoader
 from skimage import color
 
-def load_trainset(data_path,lab=False,normalize=True):
+    
+def load_trainset(data_path, lab=False, load_list=False,normalize=True):
     if 'cifar' in  data_path:
         trainset = datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transforms.ToTensor())
         print('cifar loaded')
     elif 'places' in data_path:
-        trainset = PlacesDataset(data_path,lab=lab,normalize=normalize)
-        print('places loaded')    
+        trainset = PlacesDataset(data_path,lab=lab,load_list=load_list,normalize=normalize)
     return trainset
-
 class PlacesDataset(Dataset):
-    def __init__(self, path, transform=True, lab=False, classification=False, normalize=True):
+    def __init__(self, path, transform=True, lab=False, classification=False, load_list=False, normalize=True):
         self.path = path
-        self.file_list = sorted(list(set(os.listdir(path))))
+        if load_list:          
+            if path[-1] == "/":
+                list_path = path[:-1] + '-list.txt'
+            else:
+                list_path = path + '-list.txt'
+            try:
+                with open(list_path, 'r') as f:
+                    self.file_list = [line.rstrip('\n') for line in f]
+            except FileNotFoundError:
+                print("List not found, new list initialized")
+                self.file_list = sorted(list(set(os.listdir(path))))
+                with open(list_path, 'w') as f:
+                    for s in self.file_list:
+                        f.write(str(s) + '\n')
+        else:
+            self.file_list = sorted(list(set(os.listdir(path))))
+        
         self.transform = transform
         self.lab = lab
         self.bins = classification
