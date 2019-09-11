@@ -8,23 +8,24 @@ from torchvision import transforms, utils
 from torch.utils.data import Dataset, DataLoader
 from skimage import color
 
-def load_trainset(data_path,lab=False):
-    if data_path == './cifar-10':
+def load_trainset(data_path,lab=False,normalize=True):
+    if 'cifar' in  data_path:
         trainset = datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transforms.ToTensor())
         print('cifar loaded')
     elif 'places' in data_path:
-        trainset = PlacesDataset(data_path,lab=lab)
+        trainset = PlacesDataset(data_path,lab=lab,normalize=normalize)
         print('places loaded')    
     return trainset
 
 class PlacesDataset(Dataset):
-    def __init__(self, path, transform=True, lab=False, classification=False):
+    def __init__(self, path, transform=True, lab=False, classification=False, normalize=True):
         self.path = path
         self.file_list = sorted(list(set(os.listdir(path))))
         self.transform = transform
-        self.lab=lab
-        self.bins=classification
+        self.lab = lab
+        self.bins = classification
+        self.norm = normalize
         #need to use transforms.Normalize in future but currently broken
         self.offset=-np.array([0,128,128])
         self.range=np.array([100,255,255])
@@ -36,7 +37,11 @@ class PlacesDataset(Dataset):
                                 self.file_list[item])
         image = plt.imread(img_name)/255
         if self.lab:
-            image = (color.rgb2lab(image)-self.offset[None,None,:])/self.range[None,None,:]
+            if self.norm:
+                image = (color.rgb2lab(image)-self.offset[None,None,:])/self.range[None,None,:]
+            else:
+                image = (color.rgb2lab(image)-np.array([50,0,0])[None,None,:])
+
             if self.bins:
                 image[:,:,1:]=ab2bins(image[:,:,1:])
         if self.transform:
