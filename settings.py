@@ -24,6 +24,7 @@ settings = {
     'loss_name':'loss.txt',
     'model_description_name': 'model_description.json',
     'lab':False,
+    'load_list':False,
     # data path: 'places-test/','./cifar-10'
     'data_path':'places-test/', 
     # report loss every x batch

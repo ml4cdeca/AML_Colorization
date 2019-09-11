@@ -8,13 +8,13 @@ from torchvision import transforms, utils
 from torch.utils.data import Dataset, DataLoader
 from skimage import color
 
-def load_trainset(data_path,lab=False):
+def load_trainset(data_path, lab=False, load_list=False):
     if data_path == './cifar-10':
         trainset = datasets.CIFAR10(root=data_path, train=True,
                                         download=True, transform=transforms.ToTensor())
         print('cifar loaded')
     elif 'places' in data_path:
-        trainset = PlacesDataset(data_path,lab=lab)
+        trainset = PlacesDataset(data_path,lab=lab,load_list=load_list)
         print('places loaded')    
     return trainset
 
