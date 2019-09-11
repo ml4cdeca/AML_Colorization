@@ -38,6 +38,7 @@ def main(argv):
     drop_rate = 0
     lab = s.lab
     weighted_loss=False
+    load_list=s.load_list
     help='test.py -b <int> -p <string> -r <int> -w <string>'
     try:
         opts, args = getopt.getopt(argv,"he:b:r:w:l:s:n:p:d:i:m:",
@@ -85,9 +86,10 @@ def main(argv):
             lab=True
         elif opt in ('-i','--image-loss-weight'):
             image_loss_weight=float(arg)
-        elif opt =='-weighted':
+        elif opt =='--weighted':
             weighted_loss=True
-
+        elif opt =='--load-list':
+            load_list=not load_list
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset=None
     in_size = 256
@@ -105,7 +107,7 @@ def main(argv):
 
     loss_path_ending = os.path.join(weight_path, weights_name + "_" + s.loss_name)
 
-    trainset = load_trainset(data_path,lab=lab)
+    trainset = load_trainset(data_path,lab=lab,normalize=False,load_list=load_list)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=mbsize,
                                         shuffle=True, num_workers=2)
  
@@ -203,7 +205,7 @@ def main(argv):
             if dataset == 0: #cifar 10
                 image=np.transpose(image,(0,3,2,1))
                 image=np.transpose(color.rgb2lab(image),(0,3,2,1))
-                image=torch.from_numpy((image+np.array([0,128,128])[None,:,None,None])/np.array([100,255,255])[None,:,None,None]).float()
+                image=torch.from_numpy((image-np.array([50,0,0])[None,:,None,None])).float()
             X=image[:,:1,:,:].to(device) #set X to the Lightness of the image
             image=image[:,1:,:,:].to(device) #image is a and b channel
             
@@ -223,6 +225,8 @@ def main(argv):
                 #binab=torch.from_numpy(binab).long().to(device)
             binab=torch.squeeze(binab,1)#.long()
             #lookup table for soft encoded one hot vectors
+            #print('ground truth',np.bincount(binab.detach().cpu().numpy().flatten()))
+            #print('output',np.bincount(model_out.detach().cpu().numpy().argmax(1).flatten()))
             binab=soft_onehot[:,binab].transpose(0,1).double()
             #calculate loss 
             #print(model_out.shape,binab.shape)

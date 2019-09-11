@@ -18,7 +18,7 @@ def load_trainset(data_path, lab=False, load_list=False,normalize=True):
         trainset = PlacesDataset(data_path,lab=lab,load_list=load_list,normalize=normalize)
     return trainset
 class PlacesDataset(Dataset):
-    def __init__(self, path, transform=True, lab=False, classification=False, load_list=False, normalize=True):
+    def __init__(self, path, transform=True, lab=False, classification=False, load_list=True, normalize=True):
         self.path = path
         if load_list:          
             if path[-1] == "/":
