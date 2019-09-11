@@ -19,9 +19,25 @@ def load_trainset(data_path,lab=False):
     return trainset
 
 class PlacesDataset(Dataset):
-    def __init__(self, path, transform=True, lab=False, classification=False):
+    def __init__(self, path, transform=True, lab=False, classification=False, load_list=False):
         self.path = path
-        self.file_list = sorted(list(set(os.listdir(path))))
+        if load_list:          
+            if path[-1] == "/":
+                list_path = path[:-1] + '-list.txt'
+            else:
+                list_path = path + '-list.txt'
+            try:
+                with open(list_path, 'r') as f:
+                    self.file_list = [line.rstrip('\n') for line in f]
+            except FileNotFoundError:
+                print("List not found, new list initialized")
+                self.file_list = sorted(list(set(os.listdir(path))))
+                with open(list_path, 'w') as f:
+                    for s in l:
+                        f.write(str(s) + '\n')
+        else:
+            self.file_list = sorted(list(set(os.listdir(path))))
+        
         self.transform = transform
         self.lab=lab
         self.bins=classification
