@@ -33,7 +33,7 @@ class PlacesDataset(Dataset):
                 print("List not found, new list initialized")
                 self.file_list = sorted(list(set(os.listdir(path))))
                 with open(list_path, 'w') as f:
-                    for s in l:
+                    for s in self.file_list:
                         f.write(str(s) + '\n')
         else:
             self.file_list = sorted(list(set(os.listdir(path))))
